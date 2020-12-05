@@ -1,0 +1,68 @@
+
+<main class="d-flex flex-column m-5">
+  <form id="form-format" action="/download" method="post" class="Box col-10 col-md-6 mx-auto my-5">
+    <div class="Box-body">
+      <h3 class="f2-light">YouTube Video Info</h3>
+
+      <iframe src="{{ videoDetails.embed.iframeUrl }}" class="width-full border-0 mt-2"></iframe>
+
+      <input id="url" name="url" type="text" value="{{ videoDetails.video_url }}" class="form-control input-block my-3" autocomplete="off" readonly>
+
+      <label for="filename">Filename:</label>
+      <input id="filename" name="filename" type="text" value="{{ videoDetails.title }}" class="form-control input-block mb-3" autocomplete="off">
+
+      <label for="format">Available formats:</label>
+      <select id="format" name="format" class="form-control input-block mb-3" required>
+        {{#each formats}}
+        <option value="{{ split this.mimeType ';' 0 }}-{{ this.itag }}">
+          {{ split this.mimeType ';' 0 }} (
+          {{#if this.qualityLabel }}
+            {{ this.qualityLabel }}
+          {{else}}
+            {{ this.quality }}
+          {{/if}}
+          ) - {{ bytes this.contentLength }}
+        </option>
+        {{/each}}
+      </select>
+
+      <button type="submit" class="btn btn-primary btn-block mb-2">Convert and Download</button>
+      <a href="/" class="btn btn-danger btn-block" role="button">Download another video</a>
+
+      <p class="f5 text-gray-light mt-3">
+        Select which format you wanted to download the media then click "Convert and Download".
+      </p>
+    </div>
+  </form>
+
+  <hr class="col-6 mx-auto my-5">
+
+  <div class="col-10 col-md-6 text-center mx-auto my-5">
+    <h1>About</h1>
+    <p class="lead">
+      <i>YouTube Downloader</i> is an open-sourced, easy-to-use, mobile-friendly,
+      and ad-free YouTube video downloader/converter. You can access the site's codes
+      <a href="https://github.com/eidoriantan/youtube-downloader">in this repository</a>.
+    </p>
+  </div>
+
+  <hr class="col-6 mx-auto my-5">
+
+  <div class="col-10 col-md-6 text-center mx-auto my-5">
+    <h1>Support</h1>
+    <p class="lead">
+      If you like the project and wanted to support, you can become a patreon and
+      donate to support the project.
+    </p>
+
+    <a href="https://www.patreon.com/eidoriantan">
+      <img src="/assets/images/patreon.png" width="245" height="50" alt="Become a Patron" class="mb-2">
+    </a>
+
+    <form action="https://www.paypal.com/donate" method="post" target="_top">
+      <input type="hidden" name="hosted_button_id" value="8FK2TBUCAEMZQ">
+      <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button">
+      <img alt="" src="https://www.paypal.com/en_PH/i/scr/pixel.gif" width="1" height="1" class="border-0">
+    </form>
+  </div>
+</main>

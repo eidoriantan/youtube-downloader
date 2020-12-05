@@ -1,0 +1,6 @@
+
+.DS_Store
+
+# Ignore Node-generated files
+node_modules/
+debug.log

@@ -1,0 +1,54 @@
+{
+  "name": "youtube-downloader",
+  "version": "0.1.0",
+  "description": "Youtube video and audio downloader using youtube-dl",
+  "keywords": [
+    "node",
+    "express",
+    "youtube",
+    "ytdl",
+    "youtube-dl",
+    "download",
+    "downloader"
+  ],
+  "homepage": "https://github.com/eidoriantan/youtube-downloader#README",
+  "bugs": "https://github.com/eidoriantan/youtube-downloader/issues",
+  "license": "GPL-3.0-only",
+  "author": {
+    "name": "Adriane Justine Tan",
+    "email": "eidoriantan@gmail.com",
+    "url": "https://eidoriantan.github.io"
+  },
+  "contributors": [],
+  "funding": {
+    "type": "patreon",
+    "url": "https://patreon.com/eidoriantan"
+  },
+  "main": "server.js",
+  "directories": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eidoriantan/youtube-downloader.git"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "lint": "standard",
+    "postlint": "git log -1 --format=%B | commitlint",
+    "pretest": "npm run lint",
+    "test": "echo 'No tests'"
+  },
+  "dependencies": {
+    "@primer/octicons": "^11.1.0",
+    "express": "^4.17.1",
+    "express-handlebars": "^5.2.0",
+    "mime-types": "^2.1.27",
+    "ytdl-core": "^4.1.2"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^11.0.0",
+    "@commitlint/config-conventional": "^11.0.0",
+    "should": "^13.2.3",
+    "standard": "^16.0.3"
+  },
+  "private": true
+}
