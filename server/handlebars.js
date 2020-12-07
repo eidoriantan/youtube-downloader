@@ -41,7 +41,7 @@ hbs.handlebars.registerHelper('bytes', (bytes) => {
   const units = ['b', 'kb', 'mb', 'gb', 'tb']
   let unitIndex = 0
 
-  while (Math.floor(bytes / 1024) !== 0) {
+  while (Math.floor(bytes / 1000) !== 0) {
     bytes /= 1024
     if (unitIndex < units.length - 1) unitIndex++
   }
