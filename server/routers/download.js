@@ -80,7 +80,7 @@ router.post('/download', async (req, res) => {
 
     const resultMime = hasVideo ? videoMime : audioMime
     const ext = getExtension(resultMime)
-    const filename = `${req.body.filename}.${ext}`
+    const filename = encodeURIComponent(`${req.body.filename}.${ext}`)
 
     const videoTempname = `${id}_${videoiTag}`
     const videoTemp = path.join(temp, videoTempname)
