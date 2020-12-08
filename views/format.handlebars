@@ -11,18 +11,27 @@
       <label for="filename">Filename:</label>
       <input id="filename" name="filename" type="text" value="{{ videoDetails.title }}" class="form-control input-block mb-3" autocomplete="off">
 
-      <label for="format">Available formats:</label>
-      <select id="format" name="format" class="form-control input-block mb-3" required>
-        {{#each formats}}
-        <option value="{{ split this.mimeType ';' 0 }}-{{ this.itag }}">
-          {{ split this.mimeType ';' 0 }} (
-          {{#if this.qualityLabel }}
-            {{ this.qualityLabel }}
-          {{else}}
-            {{ this.quality }}
-          {{/if}}
-          ) - {{ bytes this.contentLength }}
+      <label for="video-format">Available video formats:</label>
+      <select id="video-format" name="video-format" class="form-control input-block mb-3" required>
+        <option value="none">Do not include video</option>
+        {{#each videoFormats}}
+        {{#with this}}
+        <option value="{{ split mimeType ';' 0 }}-{{ itag }}">
+          {{ mimeType }} ({{ qualityLabel }}) - {{ bytes contentLength }}
         </option>
+        {{/with}}
+        {{/each}}
+      </select>
+
+      <label for="audio-format">Available audio formats:</label>
+      <select id="audio-format" name="audio-format" class="form-control input-block mb-3" required>
+        <option value="none">Do not include audio</option>
+        {{#each audioFormats}}
+        {{#with this}}
+        <option value="{{ split mimeType ';' 0 }}-{{ itag }}">
+          {{ mimeType }} ({{ quality }}) - {{ bytes contentLength }}
+        </option>
+        {{/with}}
         {{/each}}
       </select>
 
@@ -31,6 +40,7 @@
 
       <p class="f5 text-gray-light mt-3">
         Select which format you wanted to download the media then click "Convert and Download".
+        Converting media files may take a while before the download starts so please wait.
       </p>
     </div>
   </form>

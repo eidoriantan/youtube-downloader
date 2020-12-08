@@ -26,8 +26,10 @@ router.get('/', async (req, res) => {
 router.get('/format', async (req, res) => {
   try {
     const id = ytdl.getVideoID(req.query.url)
-    const info = await ytdl.getBasicInfo(id)
-    res.render('format', info)
+    const info = await ytdl.getInfo(id)
+    const audioFormats = ytdl.filterFormats(info.formats, 'audioonly')
+    const videoFormats = ytdl.filterFormats(info.formats, 'videoonly')
+    res.render('format', { ...info, audioFormats, videoFormats })
   } catch (error) {
     res.status(400).json({
       message: 'Unable to parse YouTube ID',
