@@ -33,10 +33,6 @@ hbs.handlebars.registerHelper('octicon', (name, className, height, width) => {
   return new hbs.handlebars.SafeString(octicon.toSVG(options))
 })
 
-hbs.handlebars.registerHelper('split', (string, char, index) => {
-  return string.split(char)[index]
-})
-
 hbs.handlebars.registerHelper('bytes', (bytes) => {
   if (typeof bytes !== 'number') bytes = parseInt(bytes)
 

@@ -16,9 +16,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-const router = require('express').Router()
+const express = require('express')
+const router = express.Router()
 
-router.use('/convert', require('./routers/convert.js'))
-router.use('/download', require('./routers/download.js'))
+router.use('/@primer/css/', express.static('node_modules/@primer/css/dist'))
+router.use('/@primer/octicons/', express.static('node_modules/@primer/octicons/build'))
+router.use('/jquery/', express.static('node_modules/jquery/dist'))
 
 module.exports = router

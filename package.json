@@ -1,6 +1,6 @@
 {
   "name": "youtube-downloader",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Youtube video and audio downloader using youtube-dl",
   "keywords": [
     "node",
@@ -38,11 +38,13 @@
     "test": "echo 'No tests'"
   },
   "dependencies": {
+    "@primer/css": "^15.2.0",
     "@primer/octicons": "^11.1.0",
     "express": "^4.17.1",
     "express-handlebars": "^5.2.0",
     "ffmpeg-static": "^4.2.7",
     "fluent-ffmpeg": "^2.1.2",
+    "jquery": "^3.5.1",
     "ytdl-core": "^4.1.4"
   },
   "devDependencies": {

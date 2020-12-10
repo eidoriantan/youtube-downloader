@@ -20,6 +20,7 @@ const express = require('express')
 const hbs = require('./server/handlebars.js')
 const views = require('./server/views.js')
 const routers = require('./server/routers.js')
+const libraries = require('./server/libraries.js')
 
 const app = express()
 let server = null
@@ -31,6 +32,7 @@ app.engine('handlebars', hbs.engine)
 app.set('view engine', 'handlebars')
 
 app.use('/', express.static('public'))
+app.use('/libs', libraries)
 app.use('/', views)
 app.use('/', routers)
 

@@ -12,9 +12,11 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
   <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#df6a52">
-  <link rel="stylesheet" href="/libraries/primer-css/primer.css">
-  <link rel="stylesheet" href="/styles/default.css">
-  <script src="/libraries/jquery/jquery.min.js"></script>
+  <link rel="stylesheet" href="/libs/@primer/css/primer.css">
+  <link rel="stylesheet" href="/libs/@primer/octicons/build.css">
+
+  <script src="/libs/jquery/jquery.min.js"></script>
+  <script src="/scripts/default.js"></script>
 
   <title>YouTube Downloader{{#if title}} | {{title}}{{/if}}</title>
 </head>
@@ -30,12 +32,25 @@
 
     <div class="Header-item">
       <a href="https://github.com/eidoriantan/youtube-downloader" title="GitHub Repository" class="Header-link">
-        {{ octicon 'mark-github' 'current-color' 32 32 }}
+        {{ octicon 'mark-github' '' 32 32 }}
       </a>
     </div>
   </header>
 
   {{{ body }}}
+
+  <div id="toasts-container" class="position-fixed bottom-0 left-0 mb-3 ml-3">
+  </div>
+
+  <template id="temp-toast">
+    <div class="Toast Toast--animateIn">
+      <span class="Toast-icon"></span>
+      <span class="Toast-content"></span>
+      <button type="button" class="Toast-dismissButton">
+        {{ octicon 'x' '' 16 16 }}
+      </button>
+    </div>
+  </template>
 
   <footer class="text-center text-gray-light mb-3">
     <div>Copyright &copy; 2020, <a href="https://eidoriantan.github.io">@eidoriantan</a></div>

@@ -1,6 +1,8 @@
 
+<script src="/scripts/convert.js"></script>
+
 <main class="d-flex flex-column m-5">
-  <form id="form-format" action="/download" method="post" class="Box col-10 col-md-6 mx-auto my-5">
+  <form id="form-format" action="/convert" method="post" class="Box col-10 col-md-6 mx-auto my-5">
     <div class="Box-body">
       <h3 class="f2-light">YouTube Video Info</h3>
 
@@ -11,24 +13,24 @@
       <label for="filename">Filename:</label>
       <input id="filename" name="filename" type="text" value="{{ videoDetails.title }}" class="form-control input-block mb-3" autocomplete="off">
 
-      <label for="video-format">Available video formats:</label>
-      <select id="video-format" name="video-format" class="form-control input-block mb-3" required>
+      <label for="video-itag">Available video formats:</label>
+      <select id="video-itag" name="video-itag" class="form-control input-block mb-3" required>
         <option value="none">Do not include video</option>
         {{#each videoFormats}}
         {{#with this}}
-        <option value="{{ split mimeType ';' 0 }}-{{ itag }}">
+        <option value="{{ itag }}">
           {{ mimeType }} ({{ qualityLabel }}) - {{ bytes contentLength }}
         </option>
         {{/with}}
         {{/each}}
       </select>
 
-      <label for="audio-format">Available audio formats:</label>
-      <select id="audio-format" name="audio-format" class="form-control input-block mb-3" required>
+      <label for="audio-itag">Available audio formats:</label>
+      <select id="audio-itag" name="audio-itag" class="form-control input-block mb-3" required>
         <option value="none">Do not include audio</option>
         {{#each audioFormats}}
         {{#with this}}
-        <option value="{{ split mimeType ';' 0 }}-{{ itag }}">
+        <option value="{{ itag }}">
           {{ mimeType }} ({{ quality }}) - {{ bytes contentLength }}
         </option>
         {{/with}}
