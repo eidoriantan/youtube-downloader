@@ -1,6 +1,6 @@
 {
   "name": "youtube-downloader",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Youtube video and audio downloader using youtube-dl",
   "keywords": [
     "node",
