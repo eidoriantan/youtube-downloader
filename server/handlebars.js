@@ -22,13 +22,15 @@ const octicons = require('@primer/octicons')
 const hbs = exphbs.create({ defaultLayout: 'main' })
 hbs.handlebars.registerHelper('octicon', (name, className, height, width) => {
   const octicon = octicons[name]
-  if (typeof octicon === 'undefined') return ''
-
-  return new hbs.handlebars.SafeString(octicon.toSVG({
-    class: typeof className === 'string' ? className : '',
+  const options = {
     height: typeof height === 'number' ? height : 16,
     width: typeof width === 'number' ? width : 16
-  }))
+  }
+
+  if (typeof octicon === 'undefined') return ''
+  if (className) options.class = className.toString()
+
+  return new hbs.handlebars.SafeString(octicon.toSVG(options))
 })
 
 hbs.handlebars.registerHelper('split', (string, char, index) => {
