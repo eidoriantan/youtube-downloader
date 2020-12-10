@@ -120,7 +120,7 @@ router.post('/', async (req, res) => {
             .input(audioTemp).inputFormat(getContainer(audioMime))
             .on('error', reject).on('end', resolve)
             .format(ext)
-            .outputOptions(['-c:v copy', '-c:a aac'])
+            .outputOptions(['-c:v copy', '-c:a copy'])
             .output(outpath)
             .run()
         })
