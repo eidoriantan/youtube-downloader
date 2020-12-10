@@ -114,13 +114,30 @@ router.post('/', async (req, res) => {
       const outpath = path.join(temp, outname)
 
       if (!fs.existsSync(outpath)) {
+        const videoCont = getContainer(videoMime)
+        const audioCont = getContainer(audioMime)
+        let audio = ''
+
+        switch (videoCont) {
+          case 'mp4':
+            audio = 'aac'
+            break
+
+          case 'webm':
+            audio = 'libopus'
+            break
+
+          default:
+            audio = 'copy'
+        }
+
         await new Promise((resolve, reject) => {
           ffmpeg()
-            .input(videoTemp).inputFormat(getContainer(videoMime))
-            .input(audioTemp).inputFormat(getContainer(audioMime))
+            .input(videoTemp).inputFormat(videoCont)
+            .input(audioTemp).inputFormat(audioCont)
             .on('error', reject).on('end', resolve)
             .format(ext)
-            .outputOptions(['-c:v copy', '-c:a copy'])
+            .outputOptions(['-c:v copy', `-c:a ${audio}`])
             .output(outpath)
             .run()
         })
