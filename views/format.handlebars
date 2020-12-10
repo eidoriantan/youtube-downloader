@@ -31,7 +31,7 @@
         {{#each audioFormats}}
         {{#with this}}
         <option value="{{ itag }}">
-          {{ mimeType }} ({{ quality }}) - {{ bytes contentLength }}
+          {{ mimeType }} ({{ bitrate }} bps) - {{ bytes contentLength }}
         </option>
         {{/with}}
         {{/each}}
