@@ -18,6 +18,8 @@
 
 function getContainer (mime) {
   let container = ''
+  mime = mime.split(';')[0]
+
   switch (mime) {
     case 'audio/mp4':
       container = 'm4a'
@@ -46,6 +48,8 @@ function getContainer (mime) {
 
 function getExtension (mime) {
   let ext = ''
+  mime = mime.split(';')[0]
+
   switch (mime) {
     case 'audio/mp4':
       ext = 'm4a'

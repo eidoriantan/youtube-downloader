@@ -21,6 +21,7 @@ const path = require('path')
 
 const express = require('express')
 const ytdl = require('ytdl-core')
+const formats = require('ytdl-core/lib/formats.js')
 const ffmpeg = require('fluent-ffmpeg')
 const ffmpegStatic = require('ffmpeg-static')
 ffmpeg.setFfmpegPath(ffmpegStatic)
@@ -28,7 +29,6 @@ ffmpeg.setFfmpegPath(ffmpegStatic)
 const mime = require('../utils/mime.js')
 const getExtension = mime.getExtension
 const getContainer = mime.getContainer
-const getMime = require('../utils/itag.js').getMime
 
 const temp = path.join(__dirname, '../../temp/')
 if (!fs.existsSync(temp)) fs.mkdirSync(temp)
@@ -56,7 +56,7 @@ router.post('/', async (req, res) => {
       throw new Error('Video iTag is undefined')
     } else if (videoiTag !== 'none') {
       hasVideo = true
-      videoMime = getMime(videoiTag)
+      videoMime = formats[videoiTag].mimeType
 
       if (videoMime === null) throw new Error('Unknown video iTag value')
     }
@@ -65,7 +65,7 @@ router.post('/', async (req, res) => {
       throw new Error('Audio iTag is undefined')
     } else if (audioiTag !== 'none') {
       hasAudio = true
-      audioMime = getMime(audioiTag)
+      audioMime = formats[audioiTag].mimeType
 
       if (audioMime === null) throw new Error('Unknown audio iTag value')
     }

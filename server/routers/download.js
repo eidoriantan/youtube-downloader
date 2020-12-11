@@ -18,10 +18,10 @@
 
 const fs = require('fs')
 const path = require('path')
-const router = require('express').Router()
 
+const router = require('express').Router()
+const formats = require('ytdl-core/lib/formats.js')
 const getExtension = require('../utils/mime.js').getExtension
-const getMime = require('../utils/itag.js').getMime
 
 router.get('/', async (req, res) => {
   const resultId = req.query.id || null
@@ -42,8 +42,8 @@ router.get('/', async (req, res) => {
   const parts = resultId.split('_')
   const hasVideo = typeof parts[1] !== 'undefined'
   const hasAudio = typeof parts[2] !== 'undefined'
-  const videoMime = hasVideo && getMime(parts[1])
-  const audioMime = hasAudio && getMime(parts[2])
+  const videoMime = hasVideo && formats[parts[1]].mimeType
+  const audioMime = hasAudio && formats[parts[2]].mimeType
   const resultMime = hasVideo ? videoMime : audioMime
   const ext = getExtension(resultMime)
   const resultName = encodeURIComponent(`${filename}.${ext}`)
