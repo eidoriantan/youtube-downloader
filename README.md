@@ -9,6 +9,8 @@
 YouTube Downloader is an open-sourced, easy-to-use, mobile-friendly, and ad-free
 YouTube video downloader/converter
 
+![Website Screenshot](./public/assets/images/screenshot.jpg)
+
 ### Support
 If you had found a bug or any unexpected behavior, you can submit an issue
 through GitHub
