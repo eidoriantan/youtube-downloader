@@ -4,8 +4,5 @@ node_js:
   - 12
   - 14
 
-before_script:
-  - npm run lint
-
 git:
   quiet: true
