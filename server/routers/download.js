@@ -32,18 +32,26 @@ router.get('/', async (req, res) => {
     return
   }
 
+  const regex = /^([a-z0-9_-]{11})_([0-9]+)(_([0-9]+))?$/i
+  const match = resultId.match(regex)
+  if (match === null) {
+    res.status(400).send('Invalid result ID')
+    return
+  }
+
   const temp = path.join(__dirname, '../../temp/')
-  const filepath = path.join(temp, resultId.toString())
+  const filepath = path.join(temp, resultId)
   if (!fs.existsSync(filepath)) {
     res.status(400).send('Convert the ID first')
     return
   }
 
-  const parts = resultId.split('_')
-  const hasVideo = typeof parts[1] !== 'undefined'
-  const hasAudio = typeof parts[2] !== 'undefined'
-  const videoMime = hasVideo && formats[parts[1]].mimeType
-  const audioMime = hasAudio && formats[parts[2]].mimeType
+  const hasVideo = typeof match[2] !== 'undefined'
+  const hasAudio = typeof match[4] !== 'undefined'
+  const videoiTag = match[2]
+  const audioiTag = match[4]
+  const videoMime = hasVideo && formats[videoiTag].mimeType
+  const audioMime = hasAudio && formats[audioiTag].mimeType
   const resultMime = hasVideo ? videoMime : audioMime
   const ext = getExtension(resultMime)
   const resultName = encodeURIComponent(`${filename}.${ext}`)
