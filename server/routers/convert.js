@@ -21,11 +21,11 @@ const path = require('path')
 
 const express = require('express')
 const ytdl = require('ytdl-core')
-const formats = require('ytdl-core/lib/formats.js')
 const ffmpeg = require('fluent-ffmpeg')
 const ffmpegStatic = require('ffmpeg-static')
 ffmpeg.setFfmpegPath(ffmpegStatic)
 
+const formats = require('../utils/formats.js')
 const mime = require('../utils/mime.js')
 const getExtension = mime.getExtension
 const getContainer = mime.getContainer

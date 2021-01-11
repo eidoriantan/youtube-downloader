@@ -20,7 +20,7 @@ const fs = require('fs')
 const path = require('path')
 
 const router = require('express').Router()
-const formats = require('ytdl-core/lib/formats.js')
+const formats = require('../utils/formats.js')
 const getExtension = require('../utils/mime.js').getExtension
 
 router.get('/', async (req, res) => {
