@@ -21,6 +21,7 @@ function getContainer (mime) {
   mime = mime.split(';')[0]
 
   switch (mime) {
+    case 'audio/m4a':
     case 'audio/mp4':
       container = 'm4a'
       break
