@@ -1,9 +1,8 @@
 
 ## Youtube Downloader
 
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fet-downloader.herokuapp.com)][homepage]
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fyt-downloader.eidoriantan.tech)][homepage]
 ![Node.js CI](https://github.com/eidoriantan/youtube-downloader/workflows/Node.js%20CI/badge.svg)
-[![Build](https://travis-ci.com/eidoriantan/youtube-downloader.svg?branch=main)](https://travis-ci.com/eidoriantan/youtube-downloader)
 [![GitHub](https://img.shields.io/github/license/eidoriantan/youtube-downloader)](https://github.com/eidoriantan/youtube-downloader/blob/master/LICENSE.txt)
 
 YouTube Downloader is an open-sourced, easy-to-use, mobile-friendly, and ad-free
@@ -22,5 +21,5 @@ You can also show your support by becoming a patron!
 
 [![Patreon](https://c5.patreon.com/external/logo/become_a_patron_button.png)](https://www.patreon.com/eidoriantan)
 
-[homepage]: https://et-downloader.herokuapp.com
-[W3C Validator]: https://validator.w3.org/nu/?doc=https%3A%2F%2Fet-downloader.herokuapp.com%2F
+[homepage]: https://yt-downloader.eidoriantan.tech
+
