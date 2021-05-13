@@ -45,7 +45,7 @@
     "ffmpeg-static": "^4.3.0",
     "fluent-ffmpeg": "^2.1.2",
     "jquery": "^3.6.0",
-    "ytdl-core": "^4.7.0"
+    "ytdl-core": "^4.8.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^12.1.4",
