@@ -38,7 +38,7 @@
     "test": "echo 'No tests'"
   },
   "dependencies": {
-    "@primer/css": "^17.5.2",
+    "@primer/css": "^17.6.1",
     "@primer/octicons": "^15.0.1",
     "express": "^4.17.1",
     "express-handlebars": "^5.3.3",
