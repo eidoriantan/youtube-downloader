@@ -42,7 +42,7 @@ $(document).ready(function () {
         const filename = $('#filename').val()
         const param = $.param({ id: data.result, filename: filename })
 
-        window.location = '/download?' + param
+        window.location.href = '/download?' + param
         $.toast({
           type: 'success',
           octicon: 'check',
