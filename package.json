@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@primer/css": "^18.0.2",
-    "@primer/octicons": "^16.1.0",
+    "@primer/octicons": "^16.1.1",
     "express": "^4.17.1",
     "express-handlebars": "^5.3.4",
     "ffmpeg-static": "^4.4.0",
