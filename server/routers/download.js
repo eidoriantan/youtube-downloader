@@ -46,14 +46,27 @@ router.get('/', async (req, res) => {
     return
   }
 
-  const hasVideo = typeof match[2] !== 'undefined'
-  const hasAudio = typeof match[4] !== 'undefined'
+  let videoiTag = null
+  let audioiTag = null
+  if (typeof match[2] !== 'undefined') {
+    const mime = formats[match[2]].mimeType
+    if (mime.startsWith('audio')) audioiTag = match[2]
+    else if (mime.startsWith('video')) videoiTag = match[2]
+  }
+
+  if (typeof match[4] !== 'undefined') {
+    const mime = formats[match[4]].mimeType
+    if (mime.startsWith('audio')) audioiTag = match[4]
+    else if (mime.startsWith('video')) videoiTag = match[4]
+  }
+
   const convertedMP3 = typeof match[5] !== 'undefined'
-  const videoiTag = match[2]
-  const audioiTag = match[4]
-  const videoMime = hasVideo && formats[videoiTag].mimeType
-  const audioMime = hasAudio ? (convertedMP3 ? 'audio/mpeg' : formats[audioiTag].mimeType) : false
-  const resultMime = hasVideo ? videoMime : audioMime
+  const videoMime = videoiTag !== null ? formats[videoiTag].mimeType : false
+  const audioMime = audioiTag !== null
+    ? (convertedMP3 ? 'audio/mpeg' : formats[audioiTag].mimeType)
+    : false
+
+  const resultMime = videoMime || audioMime
   const ext = getExtension(resultMime)
   const resultName = encodeURIComponent(`${filename}.${ext}`)
 
