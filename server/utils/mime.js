@@ -21,6 +21,10 @@ function getContainer (mime) {
   mime = mime.split(';')[0]
 
   switch (mime) {
+    case 'audio/mpeg':
+      container = 'mp3'
+      break
+
     case 'audio/m4a':
     case 'audio/mp4':
       container = 'm4a'
@@ -52,6 +56,10 @@ function getExtension (mime) {
   mime = mime.split(';')[0]
 
   switch (mime) {
+    case 'audio/mpeg':
+      ext = 'mp3'
+      break
+
     case 'audio/mp4':
       ext = 'm4a'
       break
