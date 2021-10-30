@@ -37,6 +37,16 @@
         {{/each}}
       </select>
 
+      <div class="form-checkbox">
+        <label>
+          <input type="checkbox" id="convert-mp3" name="convert-mp3" aria-describedby="convert-mp3-help" disabled>
+          Convert to MP3
+        </label>
+        <p id="convert-mp3-help" class="note">
+          Converts the audio format you selected to MP3. The audio filesize indicated may change and conversion will take longer
+        </p>
+      </div>
+
       <button type="submit" class="btn btn-primary btn-block mb-2">Convert and Download</button>
       <a href="/" class="btn btn-danger btn-block" role="button">Download another video</a>
 

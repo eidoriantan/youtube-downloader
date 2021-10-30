@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
     return
   }
 
-  const regex = /^([a-z0-9_-]{11})_([0-9]+)(_([0-9]+))?$/i
+  const regex = /^([a-z0-9_-]{11})_([0-9]+)(_([0-9]+))?(-mp3)?$/i
   const match = resultId.match(regex)
   if (match === null) {
     res.status(400).send('Invalid result ID')
@@ -48,10 +48,11 @@ router.get('/', async (req, res) => {
 
   const hasVideo = typeof match[2] !== 'undefined'
   const hasAudio = typeof match[4] !== 'undefined'
+  const convertedMP3 = typeof match[5] !== 'undefined'
   const videoiTag = match[2]
   const audioiTag = match[4]
   const videoMime = hasVideo && formats[videoiTag].mimeType
-  const audioMime = hasAudio && formats[audioiTag].mimeType
+  const audioMime = hasAudio ? (convertedMP3 ? 'audio/mpeg' : formats[audioiTag].mimeType) : false
   const resultMime = hasVideo ? videoMime : audioMime
   const ext = getExtension(resultMime)
   const resultName = encodeURIComponent(`${filename}.${ext}`)

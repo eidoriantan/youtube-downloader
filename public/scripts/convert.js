@@ -19,6 +19,13 @@
 /* eslint-env jquery */
 
 $(document).ready(function () {
+  $('#audio-itag').on('change', async function (event) {
+    event.preventDefault()
+
+    const value = $(this).val()
+    $('#convert-mp3').attr('disabled', value === 'none' ? true : null)
+  })
+
   $('#form-format').submit(async function (event) {
     event.preventDefault()
 

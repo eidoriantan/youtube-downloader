@@ -42,6 +42,7 @@ router.post('/', async (req, res) => {
     const url = req.body.url
     const videoiTag = req.body['video-itag']
     const audioiTag = req.body['audio-itag']
+    const convertMP3 = typeof req.body['convert-mp3'] !== 'undefined'
 
     let id = ''
     let hasVideo = false
@@ -57,7 +58,6 @@ router.post('/', async (req, res) => {
     } else if (videoiTag !== 'none') {
       hasVideo = true
       videoMime = formats[videoiTag].mimeType
-
       if (videoMime === null) throw new Error('Unknown video iTag value')
     }
 
@@ -66,7 +66,6 @@ router.post('/', async (req, res) => {
     } else if (audioiTag !== 'none') {
       hasAudio = true
       audioMime = formats[audioiTag].mimeType
-
       if (audioMime === null) throw new Error('Unknown audio iTag value')
     }
 
@@ -74,13 +73,15 @@ router.post('/', async (req, res) => {
       throw new Error('Atleast 1 audio or video format should be included')
     }
 
-    const resultMime = hasVideo ? videoMime : audioMime
+    const resultMime = hasVideo ? videoMime : (convertMP3 ? 'audio/mpeg' : audioMime)
     const ext = getExtension(resultMime)
 
     const videoTempname = `${id}_${videoiTag}`
     const videoTemp = path.join(temp, videoTempname)
     const audioTempname = `${id}_${audioiTag}`
     const audioTemp = path.join(temp, audioTempname)
+    const mp3Tempname = `${audioTempname}-mp3`
+    const mp3Temp = path.join(temp, mp3Tempname)
 
     let videoPipe = Promise.resolve(null)
     let audioPipe = Promise.resolve(null)
@@ -107,20 +108,33 @@ router.post('/', async (req, res) => {
     }
 
     await Promise.all([videoPipe, audioPipe])
+    if (hasAudio && fs.existsSync(audioTemp) && convertMP3 && !fs.existsSync(mp3Temp)) {
+      await new Promise((resolve, reject) => {
+        const audioCont = getContainer(audioMime)
+        ffmpeg()
+          .input(audioTemp).inputFormat(audioCont)
+          .on('error', reject).on('end', resolve)
+          .format('mp3')
+          .outputOptions(['-c:a libmp3lame', '-q:a 4'])
+          .output(mp3Temp)
+          .run()
+      })
+    }
+
     res.status(200)
 
     if (hasVideo && hasAudio) {
-      const outname = `${id}_${videoiTag}_${audioiTag}`
+      const outname = `${id}_${videoiTag}_${audioiTag + (convertMP3 ? '-mp3' : '')}`
       const outpath = path.join(temp, outname)
 
       if (!fs.existsSync(outpath)) {
         const videoCont = getContainer(videoMime)
-        const audioCont = getContainer(audioMime)
+        const audioCont = convertMP3 ? 'mp3' : getContainer(audioMime)
         let audio = ''
 
         switch (videoCont) {
           case 'mp4':
-            audio = 'aac'
+            audio = convertMP3 ? 'libmp3lame' : 'aac'
             break
 
           case 'webm':
@@ -134,7 +148,8 @@ router.post('/', async (req, res) => {
         await new Promise((resolve, reject) => {
           ffmpeg()
             .input(videoTemp).inputFormat(videoCont)
-            .input(audioTemp).inputFormat(audioCont)
+            .input(convertMP3 ? mp3Temp : audioTemp)
+            .inputFormat(convertMP3 ? 'mp3' : audioCont)
             .on('error', reject).on('end', resolve)
             .format(ext)
             .outputOptions(['-c:v copy', `-c:a ${audio}`])
@@ -147,7 +162,7 @@ router.post('/', async (req, res) => {
     } else if (hasVideo) {
       result = videoTempname
     } else if (hasAudio) {
-      result = audioTempname
+      result = convertMP3 ? mp3Tempname : audioTempname
     }
 
     res.json({ success: true, result })
