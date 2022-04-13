@@ -41,7 +41,7 @@
     "@primer/css": "^19.8.2",
     "@primer/octicons": "^17.0.0",
     "express": "^4.17.3",
-    "express-handlebars": "^6.0.4",
+    "express-handlebars": "^6.0.5",
     "ffmpeg-static": "^5.0.0",
     "fluent-ffmpeg": "^2.1.2",
     "jquery": "^3.6.0",
