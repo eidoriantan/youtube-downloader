@@ -17,10 +17,34 @@
  */
 
 const express = require('express')
+const ytdl = require('ytdl-core')
+
 const router = express.Router()
 
-router.use('/@primer/css/', express.static('node_modules/@primer/css/dist'))
-router.use('/@primer/octicons/', express.static('node_modules/@primer/octicons/build'))
-router.use('/jquery/', express.static('node_modules/jquery/dist'))
+router.get('/', async (req, res) => {
+  try {
+    const id = ytdl.getVideoID(req.query.url)
+    const info = await ytdl.getInfo(id)
+    const audioFormats = ytdl.filterFormats(info.formats, 'audioonly')
+    const videoFormats = ytdl.filterFormats(info.formats, 'videoonly')
+    res.json({
+      success: true,
+      message: 'No errors.',
+      error: null,
+      info: {
+        ...info,
+        audioFormats,
+        videoFormats
+      }
+    })
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: 'Unable to parse YouTube ID',
+      error: error.message,
+      info: null
+    })
+  }
+})
 
 module.exports = router

@@ -35,14 +35,12 @@ if (!fs.existsSync(temp)) fs.mkdirSync(temp)
 
 const router = express.Router()
 
-router.use(express.urlencoded({ extended: true }))
-
 router.post('/', async (req, res) => {
   try {
     const url = req.body.url
-    const videoiTag = req.body['video-itag']
-    const audioiTag = req.body['audio-itag']
-    const convertMP3 = typeof req.body['convert-mp3'] !== 'undefined'
+    const videoiTag = req.body.videoitag
+    const audioiTag = req.body.audioitag
+    const convertMP3 = req.body.audioconvert
 
     let id = ''
     let hasVideo = false
@@ -55,7 +53,7 @@ router.post('/', async (req, res) => {
 
     if (typeof videoiTag === 'undefined') {
       throw new Error('Video iTag is undefined')
-    } else if (videoiTag !== 'none') {
+    } else if (videoiTag !== '') {
       hasVideo = true
       videoMime = formats[videoiTag].mimeType
       if (videoMime === null) throw new Error('Unknown video iTag value')
@@ -63,7 +61,7 @@ router.post('/', async (req, res) => {
 
     if (typeof audioiTag === 'undefined') {
       throw new Error('Audio iTag is undefined')
-    } else if (audioiTag !== 'none') {
+    } else if (audioiTag !== '') {
       hasAudio = true
       audioMime = formats[audioiTag].mimeType
       if (audioMime === null) throw new Error('Unknown audio iTag value')
@@ -165,11 +163,11 @@ router.post('/', async (req, res) => {
       result = convertMP3 ? mp3Tempname : audioTempname
     }
 
-    res.json({ success: true, result })
+    res.json({ success: true, id: result })
   } catch (error) {
     res.status(400).json({
-      message: 'Unable to convert video',
-      error: error.message
+      success: false,
+      message: error.message
     })
   }
 })
