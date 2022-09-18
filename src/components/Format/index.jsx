@@ -244,7 +244,7 @@ class Format extends React.Component {
 }
 
 Format.propTypes = {
-  location: PropTypes.instanceOf(Location)
+  location: PropTypes.any
 };
 
 export default function FormatWrapper () {
