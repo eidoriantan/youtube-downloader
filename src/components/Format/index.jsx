@@ -72,7 +72,9 @@ class Format extends React.Component {
   handleChange (event) {
     const input = event.target;
     const state = this.state;
-    state[input.name] = input.type === 'checkbox' ? !this.state.audioconvert : input.value;
+    state[input.name] = input.type === 'checkbox'
+      ? !this.state[input.name]
+      : input.value;
 
     state.includesAudio = state.audioitag !== '';
     this.setState(state);
