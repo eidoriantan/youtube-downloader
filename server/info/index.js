@@ -18,10 +18,11 @@
 
 const express = require('express')
 const ytdl = require('ytdl-core')
+const asyncWrap = require('async-wrap')
 
 const router = express.Router()
 
-router.get('/', async (req, res) => {
+router.get('/', asyncWrap(async (req, res) => {
   try {
     const id = ytdl.getVideoID(req.query.url)
     const info = await ytdl.getInfo(id)
@@ -45,6 +46,6 @@ router.get('/', async (req, res) => {
       info: null
     })
   }
-})
+}))
 
 module.exports = router

@@ -20,9 +20,10 @@ const fs = require('fs')
 const path = require('path')
 
 const router = require('express').Router()
+const asyncWrap = require('../utils/async-wrap.js')
 const formats = require('../utils/formats.js')
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', asyncWrap(async (req, res) => {
   const resultId = req.params.id || null
   const temp = path.join(__dirname, '../../temp/')
   const filepath = path.join(temp, resultId)
@@ -59,6 +60,6 @@ router.get('/:id', async (req, res) => {
   res.status(200)
   res.set('Content-Type', resultMime)
   fs.createReadStream(filepath).pipe(res)
-})
+}))
 
 module.exports = router
