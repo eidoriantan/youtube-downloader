@@ -64,10 +64,6 @@ function getExtension (mime) {
       ext = 'm4a'
       break
 
-    case 'audio/webm':
-      ext = 'weba'
-      break
-
     case 'video/3gpp':
       ext = '3gp'
       break
@@ -80,6 +76,7 @@ function getExtension (mime) {
       ext = 'flv'
       break
 
+    case 'audio/webm':
     case 'video/webm':
       ext = 'webm'
       break

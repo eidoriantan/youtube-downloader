@@ -25,6 +25,7 @@ const ffmpeg = require('fluent-ffmpeg')
 const ffmpegStatic = require('ffmpeg-static')
 ffmpeg.setFfmpegPath(ffmpegStatic)
 
+const asyncWrap = require('../utils/async-wrap.js')
 const formats = require('../utils/formats.js')
 const mime = require('../utils/mime.js')
 const getExtension = mime.getExtension
@@ -35,7 +36,7 @@ if (!fs.existsSync(temp)) fs.mkdirSync(temp)
 
 const router = express.Router()
 
-router.post('/', async (req, res) => {
+router.post('/', asyncWrap(async (req, res) => {
   try {
     const url = req.body.url
     const videoiTag = req.body.videoitag
@@ -170,6 +171,6 @@ router.post('/', async (req, res) => {
       message: error.message
     })
   }
-})
+}))
 
 module.exports = router
