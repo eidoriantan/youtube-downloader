@@ -1,6 +1,6 @@
 {
   "name": "youtube-downloader",
-  "version": "1.0.0-alpha",
+  "version": "1.0.0",
   "private": true,
   "description": "Youtube video and audio downloader using youtube-dl",
   "keywords": [
