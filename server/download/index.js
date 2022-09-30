@@ -21,28 +21,16 @@ const path = require('path')
 
 const router = require('express').Router()
 const formats = require('../utils/formats.js')
-const getExtension = require('../utils/mime.js').getExtension
 
-router.get('/', async (req, res) => {
-  const resultId = req.query.id || null
-  const filename = req.query.filename || resultId
-
-  if (resultId === null) {
-    res.status(400).send('No ID')
-    return
-  }
-
-  const regex = /^([a-z0-9_-]{11})_([0-9]+)(_([0-9]+))?(-mp3)?$/i
-  const match = resultId.match(regex)
-  if (match === null) {
-    res.status(400).send('Invalid result ID')
-    return
-  }
-
+router.get('/:id', async (req, res) => {
+  const resultId = req.params.id || null
   const temp = path.join(__dirname, '../../temp/')
   const filepath = path.join(temp, resultId)
-  if (!fs.existsSync(filepath)) {
-    res.status(400).send('Convert the ID first')
+  const regex = /^([a-z0-9_-]{11})_([0-9]+)(_([0-9]+))?(-mp3)?$/i
+  const match = resultId.match(regex)
+
+  if (!fs.existsSync(filepath) || match === null) {
+    res.sendStatus(400)
     return
   }
 
@@ -67,11 +55,8 @@ router.get('/', async (req, res) => {
     : false
 
   const resultMime = videoMime || audioMime
-  const ext = getExtension(resultMime)
-  const resultName = encodeURIComponent(`${filename}.${ext}`)
 
   res.status(200)
-  res.set('Content-Disposition', `attachment; filename=${resultName}`)
   res.set('Content-Type', resultMime)
   fs.createReadStream(filepath).pipe(res)
 })

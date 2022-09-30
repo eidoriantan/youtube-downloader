@@ -16,26 +16,15 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-const router = require('express').Router()
-const ytdl = require('ytdl-core')
+export function parseBytes (byteLength) {
+  const units = ['b', 'kb', 'mb', 'gb', 'tb'];
+  let bytes = parseInt(byteLength);
+  let unitIndex = 0;
 
-router.get('/', async (req, res) => {
-  res.render('home')
-})
-
-router.get('/format', async (req, res) => {
-  try {
-    const id = ytdl.getVideoID(req.query.url)
-    const info = await ytdl.getInfo(id)
-    const audioFormats = ytdl.filterFormats(info.formats, 'audioonly')
-    const videoFormats = ytdl.filterFormats(info.formats, 'videoonly')
-    res.render('format', { ...info, audioFormats, videoFormats })
-  } catch (error) {
-    res.status(400).json({
-      message: 'Unable to parse YouTube ID',
-      error: error.message
-    })
+  while (Math.floor(bytes / 1000) !== 0) {
+    bytes /= 1024;
+    if (unitIndex < units.length - 1) unitIndex++;
   }
-})
 
-module.exports = router
+  return `${bytes.toFixed(2)} ${units[unitIndex]}`;
+}

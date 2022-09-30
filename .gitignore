@@ -5,5 +5,16 @@
 node_modules/
 debug.log
 
+# dotenv files
+.env
+
+# production
+/build
+
 # App-generated files
 temp/
+
+# debugs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

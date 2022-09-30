@@ -16,9 +16,9 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-const router = require('express').Router()
-
-router.use('/convert', require('./routers/convert.js'))
-router.use('/download', require('./routers/download.js'))
-
-module.exports = router
+export function downloadURL (url, filename) {
+  const anchor = document.createElement('A');
+  anchor.download = filename;
+  anchor.href = url;
+  anchor.click();
+}
