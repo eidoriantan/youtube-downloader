@@ -18,7 +18,7 @@
 
 const express = require('express')
 const ytdl = require('ytdl-core')
-const asyncWrap = require('async-wrap')
+const asyncWrap = require('../utils/async-wrap.js')
 
 const router = express.Router()
 
