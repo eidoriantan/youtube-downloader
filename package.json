@@ -35,7 +35,7 @@
     "postlint": "git log -1 --format=%B | commitlint"
   },
   "dependencies": {
-    "@primer/octicons-react": "^17.10.0",
+    "@primer/octicons-react": "^18.2.0",
     "@primer/react": "^35.16.0",
     "axios": "^1.2.1",
     "dotenv": "^16.0.3",
