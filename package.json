@@ -44,7 +44,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "jquery": "^3.6.4",
     "styled-components": "^5.3.9",
-    "ytdl-core": "^4.11.2"
+    "ytdl-core": "^4.11.4"
   },
   "devDependencies": {
     "@babel/cli": "^7.21.0",
