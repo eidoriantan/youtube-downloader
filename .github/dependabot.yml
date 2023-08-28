@@ -9,8 +9,5 @@ updates:
   reviewers:
   - eidoriantan
   ignore:
-  - dependency-name: rollup
-    versions:
-    - 2.41.5
-    - 2.42.3
-    - 2.45.1
+  - dependency-name: "*"
+    update-types: ["version-update:semver-major", "version-update:semver-minor"]
