@@ -196,7 +196,9 @@ class Format extends React.Component {
               <Text>Convert and Download</Text>
             </Button>
 
-            <Button as={NavLink} variant="danger" sx={{ display: 'block', width: '100%', mt: 2 }} to="/">Download another video</Button>
+            <NavLink to="/" style={{ textDecoration: 'none' }}>
+              <Button variant="danger" sx={{ display: 'block', width: '100%', mt: 2, textDecoration: 'none' }}>Download another video</Button>
+            </NavLink>
 
             <Text as="p" fontSize={1}>
               Select which format you wanted to download the media then click &quot;Convert and Download&quot;.
