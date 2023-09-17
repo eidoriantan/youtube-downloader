@@ -42,7 +42,7 @@ class Home extends React.Component {
   render () {
     return (
       <React.Fragment>
-        <Box width={[0.8, 0.8, 0.6, 0.4]} mx="auto" mb={3} px={[2, 4, 10, 12]} pt={5} pb={8} sx={{
+        <Box width={[0.8, 0.8, 0.6, 0.5, 0.4]} mx="auto" mb={3} px={[2, 4, 10, 12]} pt={5} pb={8} sx={{
             borderWidth: 0,
             borderBottomWidth: 1,
             borderColor: 'border.default',
@@ -71,7 +71,7 @@ class Home extends React.Component {
           </Box>
         </Box>
 
-        <Box width={[0.8, 0.8, 0.6, 0.4]} mx="auto" mb={3} px={4} py={10} textAlign="center" sx={{
+        <Box width={[0.8, 0.8, 0.6, 0.5, 0.4]} mx="auto" mb={3} px={4} py={10} textAlign="center" sx={{
             borderWidth: 0,
             borderBottomWidth: 1,
             borderColor: 'border.default',
