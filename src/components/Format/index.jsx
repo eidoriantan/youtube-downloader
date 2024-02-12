@@ -16,183 +16,153 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Box, Text, Link, Spinner, FormControl, TextInput, Select, Checkbox, Button, Flash } from '@primer/react';
 import { AlertIcon } from '@primer/octicons-react';
 import axios from 'axios';
-import PropTypes from 'prop-types';
 
 import { parseBytes } from '../../utils/bytes';
 import { downloadURL } from '../../utils/download';
+import { handleChange } from '../../utils/change';
 
-class Format extends React.Component {
-  constructor (props) {
-    super(props);
+const Format = () => {
+  const [info, setInfo] = useState(null);
+  const [error, setError] = useState(null);
+  const [filename, setFilename] = useState('');
+  const [videoitag, setVideoitag] = useState('');
+  const [audioitag, setAudioitag] = useState('');
+  const [audioconvert, setAudioconvert] = useState(false);
+  const [includesAudio, setIncludesAudio] = useState(false);
+  const [converting, setConverting] = useState(false);
 
-    const params = new URLSearchParams(props.location.search);
-    const url = params.get('url');
+  const location = useLocation();
+  const url = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('url');
+  }, [location]);
 
-    this.state = {
-      url,
-      info: null,
-      error: null,
-      filename: '',
-      videoitag: '',
-      audioitag: '',
-      audioconvert: false,
-      includesAudio: false,
-      converting: false
-    };
-
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-  }
-
-  async componentDidMount () {
-    try {
-      const infoRes = await axios.get('/api/info', {
-        params: { url: this.state.url }
-      });
-
-      if (!infoRes.data.success) {
-        this.setState({ error: infoRes.data.message });
-        return;
-      }
-
-      this.setState({
-        info: infoRes.data.info,
-        filename: infoRes.data.info.videoDetails.title
-      });
-    } catch (error) {
-      this.setState({ error: error.response.data.message });
-    }
-  }
-
-  handleChange (event) {
-    const input = event.target;
-    const state = this.state;
-    state[input.name] = input.type === 'checkbox'
-      ? !this.state[input.name]
-      : input.value;
-
-    state.includesAudio = state.audioitag !== '';
-    this.setState(state);
-  }
-
-  async handleSubmit (event) {
+  const handleSubmit = useCallback(async (event) => {
     event.preventDefault();
 
+    if (!url) return;
     const form = event.target;
     const action = form.action;
     const method = form.method;
-    const state = this.state;
-    state.error = '';
-    state.converting = true;
-    this.setState(state);
+    setError('');
+    setConverting(true);
 
     try {
       const response = await axios({
         url: action,
         method,
         data: {
-          url: state.url,
-          audioitag: state.audioitag,
-          videoitag: state.videoitag,
-          audioconvert: state.audioconvert
+          url,
+          audioitag,
+          videoitag,
+          audioconvert
         }
       });
 
       const data = response.data;
       if (data.success) {
-        downloadURL(`/api/download/${data.id}`, state.filename);
+        downloadURL(`/api/download/${data.id}`, filename);
       } else {
-        state.error = data.message;
+        setError(data.message);
       }
     } catch (error) {
-      state.error = error.response.data.message;
+      setError(error.response.data.message);
     }
 
-    state.converting = false;
-    this.setState(state);
-  }
+    setConverting(false);
+  }, [url, audioitag, videoitag, audioconvert, filename]);
 
-  render () {
-    const info = this.state.info;
-    let display = null;
+  useEffect(() => {
+    if (!url) return;
 
-    if (info !== null) {
-      const details = info.videoDetails;
-      const embed = details.embed;
-      const videoFormats = [];
-      const audioFormats = [];
-
-      for (let i = 0; i < info.videoFormats.length; i++) {
-        const format = info.videoFormats[i];
-        const bytes = parseBytes(format.contentLength);
-
-        videoFormats.push(
-          <Select.Option value={format.itag} key={i}>
-            { format.mimeType } ({ format.qualityLabel }) - { bytes }
-          </Select.Option>
-        );
+    const controller = new AbortController();
+    axios.get('/api/info', {
+      params: { url },
+      signal: controller.signal
+    }).then((infoRes) => {
+      if (!infoRes.data.success) {
+        setError(infoRes.data.message);
+        return;
       }
 
-      for (let i = 0; i < info.audioFormats.length; i++) {
-        const format = info.audioFormats[i];
-        const bytes = parseBytes(format.contentLength);
+      setInfo(infoRes.data.info);
+      setFilename(infoRes.data.info.videoDetails.title);
+    }).catch((error) => {
+      if (error.code !== 'ERR_CANCELED') setError(error.response.data.message);
+    });
 
-        audioFormats.push(
-          <Select.Option value={format.itag} key={i}>
-            { format.mimeType } ({ format.bitrate } bps) - { bytes }
-          </Select.Option>
-        );
-      }
+    return () => controller.abort();
+  }, [url]);
 
-      display = (
+  return (
+    <Box display="contents">
+      { info !== null && (
         <Box m={5}>
-          <Box as="form" action="/api/convert" method="post" onSubmit={this.handleSubmit} width={[0.8, 0.8, 0.4]} mx="auto" my={5} p={3} sx={{
-              backgroundColor: 'canvas.default',
-              borderWidth: 1,
-              borderColor: 'border.default',
-              borderStyle: 'solid',
-              borderRadius: 8
-            }}>
+          <Box as="form" action="/api/convert" method="post" onSubmit={handleSubmit} width={[0.8, 0.8, 0.4]} mx="auto" my={5} p={3} sx={{
+            backgroundColor: 'canvas.default',
+            borderWidth: 1,
+            borderColor: 'border.default',
+            borderStyle: 'solid',
+            borderRadius: 8
+          }}>
             <Text fontSize={3}>YouTube Video Info</Text>
-            <Box as="iframe" src={embed.iframeUrl} width={1} borderWidth={0} my={2} />
-            <Text>Video URL: </Text><Link href={details.video_url} muted>{ details.video_url }</Link>
+            <Box as="iframe" src={info.videoDetails.embed.iframeUrl} width={1} borderWidth={0} my={2} />
+            <Text>Video URL: </Text><Link href={info.videoDetails.video_url} muted>{ info.videoDetails.video_url }</Link>
 
             <FormControl id="filename" required sx={{ mt: 3 }}>
               <FormControl.Label>Filename:</FormControl.Label>
-              <TextInput name="filename" value={this.state.filename} autoComplete="off" block onChange={this.handleChange} />
+              <TextInput name="filename" value={filename} autoComplete="off" block onChange={handleChange(setFilename)} />
             </FormControl>
 
             <FormControl id="videoitag" sx={{ mt: 3 }}>
               <FormControl.Label>Available video formats:</FormControl.Label>
-              <Select name="videoitag" defaultValue="" block onChange={this.handleChange}>
+              <Select name="videoitag" defaultValue="" block onChange={handleChange(setVideoitag)}>
                 <Select.Option value="">Do not include video</Select.Option>
-                { videoFormats }
+                { info.videoFormats.map((format, i) => {
+                  const bytes = parseBytes(format.contentLength);
+                  return (
+                    <Select.Option value={format.itag} key={i}>
+                      { format.mimeType } ({ format.qualityLabel }) - { bytes }
+                    </Select.Option>
+                  );
+                })}
               </Select>
             </FormControl>
 
             <FormControl id="audioitag" sx={{ mt: 3 }}>
               <FormControl.Label>Available audio formats:</FormControl.Label>
-              <Select name="audioitag" defaultValue="" block onChange={this.handleChange}>
+              <Select name="audioitag" defaultValue="" block onChange={(event) => {
+                const handler = handleChange(setAudioitag);
+                handler(event);
+                setIncludesAudio(event.target.value !== '');
+              }}>
                 <Select.Option value="">Do not include audio</Select.Option>
-                { audioFormats }
+                { info.audioFormats.map((format, i) => {
+                  const bytes = parseBytes(format.contentLength);
+                  return (
+                    <Select.Option value={format.itag} key={i}>
+                      { format.mimeType } ({ format.bitrate } bps) - { bytes }
+                    </Select.Option>
+                  );
+                })}
               </Select>
             </FormControl>
 
-            <FormControl id="audioconvert" disabled={!this.state.includesAudio} sx={{ mt: 3 }}>
-              <Checkbox name="audioconvert" checked={this.state.audioconvert} onChange={this.handleChange} />
+            <FormControl id="audioconvert" disabled={!includesAudio} sx={{ mt: 3 }}>
+              <Checkbox name="audioconvert" checked={audioconvert} onChange={handleChange(setAudioconvert)} />
               <FormControl.Label>Convert to MP3</FormControl.Label>
               <FormControl.Caption>Converts the audio format you selected to MP3. The audio filesize indicated may change and conversion will take longer</FormControl.Caption>
             </FormControl>
 
-            { this.state.error && <Flash variant="danger" sx={{ my: 2 }}>{ this.state.error }</Flash> }
+            { error && <Flash variant="danger" sx={{ my: 2 }}>{ error }</Flash> }
 
-            <Button type="submit" variant="primary" sx={{ display: 'block', width: '100%', mt: 2 }} disabled={this.state.converting}>
-              <Spinner size="small" sx={{ display: this.state.converting ? '' : 'none', mr: 2 }} />
+            <Button type="submit" variant="primary" sx={{ display: 'block', width: '100%', mt: 2 }} disabled={converting}>
+              <Spinner size="small" sx={{ display: converting ? '' : 'none', mr: 2 }} />
               <Text>Convert and Download</Text>
             </Button>
 
@@ -206,28 +176,28 @@ class Format extends React.Component {
             </Text>
           </Box>
         </Box>
-      );
-    } else {
-      display = (
+      )}
+
+      { info === null && (
         <Box width={[0.8, 0.8, 0.4]} textAlign="center" mx="auto" my={5} p={3} sx={{
-            backgroundColor: 'canvas.default',
-            borderWidth: 1,
-            borderColor: 'border.default',
-            borderStyle: 'solid',
-            borderRadius: 8
-          }}>
-          { this.state.error &&
+          backgroundColor: 'canvas.default',
+          borderWidth: 1,
+          borderColor: 'border.default',
+          borderStyle: 'solid',
+          borderRadius: 8
+        }}>
+          { error &&
             <React.Fragment>
               <Box>
                 <AlertIcon size={80} />
               </Box>
 
-              <Box><Text>{ this.state.error }</Text></Box>
+              <Box><Text>{ error }</Text></Box>
               <Link href="/">Back to Home</Link>
             </React.Fragment>
           }
 
-          { !this.state.error &&
+          { !error &&
             <React.Fragment>
               <Box>
                 <Spinner size="large" />
@@ -236,22 +206,9 @@ class Format extends React.Component {
             </React.Fragment>
           }
         </Box>
-      );
-    }
-
-    return (
-      <Box display="contents">
-        { display }
-      </Box>
-    );
-  }
+      )}
+    </Box>
+  );
 }
 
-Format.propTypes = {
-  location: PropTypes.any
-};
-
-export default function FormatWrapper () {
-  const location = useLocation();
-  return <Format location={location} />;
-}
+export default Format;

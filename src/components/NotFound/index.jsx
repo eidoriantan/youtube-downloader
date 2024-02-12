@@ -19,21 +19,19 @@
 import React from 'react';
 import { Box, Text, Heading } from '@primer/react';
 
-class NotFound extends React.Component {
-  render () {
-    return (
-      <Box width={[1, 0.75, 0.5]} mx="auto" my={10} p={5} sx={{
-          backgroundColor: 'canvas.subtle',
-          borderWidth: 1,
-          borderColor: 'border.default',
-          borderStyle: 'solid',
-          borderRadius: 8
-        }}>
-        <Heading>Page Not Found</Heading>
-        <Text as="p">The page you&apos;re trying to access is not found on the server.</Text>
-      </Box>
-    );
-  }
+const NotFound = () => {
+  return (
+    <Box width={[1, 0.75, 0.5]} mx="auto" my={10} p={5} sx={{
+      backgroundColor: 'canvas.subtle',
+      borderWidth: 1,
+      borderColor: 'border.default',
+      borderStyle: 'solid',
+      borderRadius: 8
+    }}>
+      <Heading>Page Not Found</Heading>
+      <Text as="p">The page you&apos;re trying to access is not found on the server.</Text>
+    </Box>
+  );
 }
 
 export default NotFound;

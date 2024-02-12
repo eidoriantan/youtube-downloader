@@ -16,88 +16,73 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, FormControl, Button, Heading, Text, Link, TextInput } from '@primer/react';
 import { ChevronRightIcon, InfoIcon } from '@primer/octicons-react';
-import PropTypes from 'prop-types';
 
-class Home extends React.Component {
-  constructor (props) {
-    super(props);
-
-    this.submitVideo = this.submitVideo.bind(this);
-  }
-
-  submitVideo (event) {
+const Home = () => {
+  const navigate = useNavigate();
+  const submitVideo = useCallback((event) => {
     event.preventDefault();
     const form = event.target;
     const url = form.querySelector('#url').value;
     const action = new URL(form.action);
     const params = new URLSearchParams();
     params.set('url', url);
-    this.props.navigate(`${action.pathname}?${params.toString()}`);
-  }
+    navigate(`${action.pathname}?${params.toString()}`);
+  }, []);
 
-  render () {
-    return (
-      <React.Fragment>
-        <Box width={[0.8, 0.8, 0.6, 0.5, 0.4]} mx="auto" mb={3} px={[2, 4, 10, 12]} pt={5} pb={8} sx={{
-            borderWidth: 0,
-            borderBottomWidth: 1,
-            borderColor: 'border.default',
-            borderStyle: 'solid'
-          }}>
-          <Box as="form" action="/format" method="get" onSubmit={this.submitVideo} p={3} sx={{
-              backgroundColor: 'canvas.default',
-              borderWidth: 1,
-              borderColor: 'border.default',
-              borderStyle: 'solid',
-              borderRadius: 8
-            }}>
-            <Text fontSize={24}>YouTube Video</Text>
-            <Box my={3}>
-              <FormControl id="url" required>
-                <FormControl.Label>YouTube Video ID/Link:</FormControl.Label>
-                <TextInput name="url" placeholder="https://www.youtube.com/watch?v=xxx" autoComplete="off" aria-label="url" block />
-              </FormControl>
-            </Box>
-
-            <Button type="submit" variant="primary" leadingIcon={ChevronRightIcon} sx={{ display: 'block', width: '100%' }}>Submit</Button>
-
-            <Text as="p" fontSize={14}>
-              Paste the YouTube video&apos;s link you wish to download then press &quot;Submit&quot;.
-            </Text>
-          </Box>
-        </Box>
-
-        <Box width={[0.8, 0.8, 0.6, 0.5, 0.4]} mx="auto" mb={3} px={4} py={10} textAlign="center" sx={{
-            borderWidth: 0,
-            borderBottomWidth: 1,
-            borderColor: 'border.default',
-            borderStyle: 'solid'
-          }}>
-          <Box display="flex" alignItems="center" justifyContent="center">
-            <InfoIcon size="medium" />
-            <Heading sx={{ ml: 2 }}>About</Heading>
+  return (
+    <React.Fragment>
+      <Box width={[0.8, 0.8, 0.6, 0.5, 0.4]} mx="auto" mb={3} px={[2, 4, 10, 12]} pt={5} pb={8} sx={{
+        borderWidth: 0,
+        borderBottomWidth: 1,
+        borderColor: 'border.default',
+        borderStyle: 'solid'
+      }}>
+        <Box as="form" action="/format" method="get" onSubmit={submitVideo} p={3} sx={{
+          backgroundColor: 'canvas.default',
+          borderWidth: 1,
+          borderColor: 'border.default',
+          borderStyle: 'solid',
+          borderRadius: 8
+        }}>
+          <Text fontSize={24}>YouTube Video</Text>
+          <Box my={3}>
+            <FormControl id="url" required>
+              <FormControl.Label>YouTube Video ID/Link:</FormControl.Label>
+              <TextInput name="url" placeholder="https://www.youtube.com/watch?v=xxx" autoComplete="off" aria-label="url" block />
+            </FormControl>
           </Box>
 
-          <Text as="p">
-            <i>YouTube Downloader</i> is an open-sourced, easy-to-use, mobile-friendly, and ad-free YouTube video converter/downloader.
-            It currently supports video (mp4 and webm) and audio (weba, m4a, mp3) formats.
-            You can access the site&apos;s codes <Link href="https://github.com/eidoriantan/youtube-downloader">in this repository</Link>.
+          <Button type="submit" variant="primary" leadingIcon={ChevronRightIcon} sx={{ display: 'block', width: '100%' }}>Submit</Button>
+
+          <Text as="p" fontSize={14}>
+            Paste the YouTube video&apos;s link you wish to download then press &quot;Submit&quot;.
           </Text>
         </Box>
-      </React.Fragment>
-    );
-  }
+      </Box>
+
+      <Box width={[0.8, 0.8, 0.6, 0.5, 0.4]} mx="auto" mb={3} px={4} py={10} textAlign="center" sx={{
+        borderWidth: 0,
+        borderBottomWidth: 1,
+        borderColor: 'border.default',
+        borderStyle: 'solid'
+      }}>
+        <Box display="flex" alignItems="center" justifyContent="center">
+          <InfoIcon size="medium" />
+          <Heading sx={{ ml: 2 }}>About</Heading>
+        </Box>
+
+        <Text as="p">
+          <i>YouTube Downloader</i> is an open-sourced, easy-to-use, mobile-friendly, and ad-free YouTube video converter/downloader.
+          It currently supports video (mp4 and webm) and audio (weba, m4a, mp3) formats.
+          You can access the site&apos;s codes <Link href="https://github.com/eidoriantan/youtube-downloader">in this repository</Link>.
+        </Text>
+      </Box>
+    </React.Fragment>
+  );
 }
 
-Home.propTypes = {
-  navigate: PropTypes.any
-};
-
-export default function HomeWrapper () {
-  const navigate = useNavigate();
-  return <Home navigate={navigate} />;
-}
+export default Home;
