@@ -163,7 +163,7 @@ router.post('/', asyncWrap(async (req, res) => {
       result = videoTempname
     } else if (hasAudio) {
       result = convertMP3 ? mp3Tempname : audioTempname
-      fileExt = getExtension(audioMime)
+      fileExt = getExtension(convertMP3 ? 'audio/mpeg' : audioMime)
     }
 
     res.json({ success: true, id: result, extension: fileExt })
