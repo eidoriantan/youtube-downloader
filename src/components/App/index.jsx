@@ -1,6 +1,6 @@
 /**
  *  YouTube Downloader
- *  Copyright (C) 2020 - 2023, Adriane Justine Tan
+ *  Copyright (C) 2020 - 2024, Adriane Justine Tan
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -76,7 +76,7 @@ const App = () => {
 
       <PageLayout.Footer>
         <Box as="footer" textAlign="center" fontSize={1} mb={3}>
-          <Box>Copyright &copy; 2020 - 2023, <Link href="https://eidoriantan.me" muted>@eidoriantan</Link></Box>
+          <Box>Copyright &copy; 2020 - 2024, <Link href="https://eidoriantan.me" muted>@eidoriantan</Link></Box>
           <Box>Site Logo was made by <Link href="https://www.flaticon.com/authors/freepik" muted>FreePik</Link></Box>
         </Box>
       </PageLayout.Footer>
