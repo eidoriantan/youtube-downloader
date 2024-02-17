@@ -66,7 +66,8 @@ const Format = () => {
 
       const data = response.data;
       if (data.success) {
-        downloadURL(`/api/download/${data.id}`, filename);
+        const fileExt = data.extension;
+        downloadURL(`/api/download/${data.id}`, `${filename}.${fileExt}`);
       } else {
         setError(data.message);
       }

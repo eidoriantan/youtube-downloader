@@ -85,6 +85,7 @@ router.post('/', asyncWrap(async (req, res) => {
     let videoPipe = Promise.resolve(null)
     let audioPipe = Promise.resolve(null)
     let result = null
+    let fileExt = ext
 
     if (hasVideo && !fs.existsSync(videoTemp)) {
       const videoWrite = fs.createWriteStream(videoTemp)
@@ -162,9 +163,10 @@ router.post('/', asyncWrap(async (req, res) => {
       result = videoTempname
     } else if (hasAudio) {
       result = convertMP3 ? mp3Tempname : audioTempname
+      fileExt = getExtension(audioMime)
     }
 
-    res.json({ success: true, id: result })
+    res.json({ success: true, id: result, extension: fileExt })
   } catch (error) {
     res.status(400).json({
       success: false,

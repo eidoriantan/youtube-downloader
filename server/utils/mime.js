@@ -60,6 +60,7 @@ function getExtension (mime) {
       ext = 'mp3'
       break
 
+    case 'audio/m4a':
     case 'audio/mp4':
       ext = 'm4a'
       break
