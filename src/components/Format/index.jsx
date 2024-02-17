@@ -22,9 +22,11 @@ import { Box, Text, Link, Spinner, FormControl, TextInput, Select, Checkbox, But
 import { AlertIcon } from '@primer/octicons-react';
 import axios from 'axios';
 
+import { audioTag } from '../../utils/tag';
 import { parseBytes } from '../../utils/bytes';
 import { downloadURL } from '../../utils/download';
-import { handleChange } from '../../utils/change';
+import { handleChange, handleFileChange } from '../../utils/change';
+import FileInput from '../FileInput';
 
 const Format = () => {
   const [info, setInfo] = useState(null);
@@ -35,6 +37,12 @@ const Format = () => {
   const [audioconvert, setAudioconvert] = useState(false);
   const [includesAudio, setIncludesAudio] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [addTag, setAddTag] = useState(false);
+  const [file, setFile] = useState(null);
+  const [title, setTitle] = useState('');
+  const [artist, setArtist] = useState('');
+  const [album, setAlbum] = useState('');
 
   const location = useLocation();
   const url = useMemo(() => {
@@ -67,7 +75,20 @@ const Format = () => {
       const data = response.data;
       if (data.success) {
         const fileExt = data.extension;
-        downloadURL(`/api/download/${data.id}`, `${filename}.${fileExt}`);
+        let downloadLink = `/api/download/${data.id}`;
+
+        if (addTag) {
+          setAdding(true);
+          downloadLink = await audioTag(downloadLink, {
+            artwork: file,
+            title,
+            artist,
+            album
+          });
+          setAdding(false);
+        }
+
+        downloadURL(downloadLink, `${filename}.${fileExt}`);
       } else {
         setError(data.message);
       }
@@ -76,7 +97,7 @@ const Format = () => {
     }
 
     setConverting(false);
-  }, [url, audioitag, videoitag, audioconvert, filename]);
+  }, [url, audioitag, videoitag, audioconvert, filename, addTag, file, title, artist, album]);
 
   useEffect(() => {
     if (!url) return;
@@ -160,11 +181,41 @@ const Format = () => {
               <FormControl.Caption>Converts the audio format you selected to MP3. The audio filesize indicated may change and conversion will take longer</FormControl.Caption>
             </FormControl>
 
+            <FormControl id="audiotag" disabled={!includesAudio || !audioconvert} sx={{ mt: 3 }}>
+              <Checkbox name="audiotag" checked={addTag} onChange={handleChange(setAddTag)} />
+              <FormControl.Label>Add audio metadata tags</FormControl.Label>
+              <FormControl.Caption>Adds MP3 metadata tags to audio such as artwork, title, artist, album, etc</FormControl.Caption>
+            </FormControl>
+
+            { includesAudio && audioconvert && addTag && (
+              <>
+                <FormControl id="audiotag-artwork" sx={{ mt: 3 }}>
+                  <FormControl.Label>Artwork Image:</FormControl.Label>
+                  <FileInput name="audiotag-artwork" accept="image/*" onChange={handleFileChange(setFile)} />
+                </FormControl>
+
+                <FormControl id="audiotag-title" sx={{ mt: 3 }}>
+                  <FormControl.Label>Title:</FormControl.Label>
+                  <TextInput name="audiotag-title" value={title} autoComplete="off" block onChange={handleChange(setTitle)} />
+                </FormControl>
+
+                <FormControl id="audiotag-artist" sx={{ mt: 3 }}>
+                  <FormControl.Label>Artist:</FormControl.Label>
+                  <TextInput name="audiotag-artist" value={artist} autoComplete="off" block onChange={handleChange(setArtist)} />
+                </FormControl>
+
+                <FormControl id="audiotag-album" sx={{ mt: 3 }}>
+                  <FormControl.Label>Album:</FormControl.Label>
+                  <TextInput name="audiotag-album" value={album} autoComplete="off" block onChange={handleChange(setAlbum)} />
+                </FormControl>
+              </>
+            )}
+
             { error && <Flash variant="danger" sx={{ my: 2 }}>{ error }</Flash> }
 
-            <Button type="submit" variant="primary" sx={{ display: 'block', width: '100%', mt: 2 }} disabled={converting}>
+            <Button type="submit" variant="primary" sx={{ display: 'block', width: '100%', mt: 3 }} disabled={converting}>
               <Spinner size="small" sx={{ display: converting ? '' : 'none', mr: 2 }} />
-              <Text>Convert and Download</Text>
+              <Text>{ adding ? 'Adding tags...' : 'Convert and Download' }</Text>
             </Button>
 
             <NavLink to="/" style={{ textDecoration: 'none' }}>
