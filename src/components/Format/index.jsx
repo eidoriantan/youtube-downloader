@@ -245,7 +245,7 @@ const Format = () => {
               <FormControl.Caption>Converts the audio format you selected to MP3. The audio filesize indicated may change and conversion will take longer</FormControl.Caption>
             </FormControl>
 
-            <FormControl id="audiotag" disabled={!includesAudio || !audioconvert} sx={{ mt: 3 }}>
+            <FormControl id="audiotag" disabled={!includesAudio || !audioconvert || videoitag} sx={{ mt: 3 }}>
               <Checkbox name="audiotag" checked={addTag} onChange={handleChange(setAddTag)} />
               <FormControl.Label>Add audio metadata tags</FormControl.Label>
               <FormControl.Caption>Adds MP3 metadata tags to audio such as artwork, title, artist, album, etc</FormControl.Caption>
