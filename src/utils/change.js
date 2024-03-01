@@ -29,3 +29,26 @@ export function handleFileChange (setter) {
     setter(input.type === 'file' ? input.files[0] : input.value);
   }
 }
+
+export function inputTime (setter) {
+  return (event) => {
+    const value = event.target.value;
+    const time = ['', '', ''];
+    let timeCurrent = 0;
+
+    for (let i = 0; i < value.length; i++) {
+      const char = value[i];
+      if (char.match(/[0-9:]+/) === null) continue;
+
+      if (char === ':') {
+        timeCurrent++;
+        continue;
+      }
+
+      if (time[timeCurrent].length === 2) timeCurrent++;
+      if (timeCurrent < 3) time[timeCurrent] += char;
+    }
+
+    setter(time.map((part) => part.padStart(2, '0')).join(':'));
+  }
+}

@@ -25,7 +25,8 @@ import axios from 'axios';
 import { audioTag } from '../../utils/tag';
 import { parseBytes } from '../../utils/bytes';
 import { downloadURL } from '../../utils/download';
-import { handleChange, handleFileChange } from '../../utils/change';
+import { handleChange, handleFileChange, inputTime } from '../../utils/change';
+import { msToTime, timeToS } from '../../utils/time';
 import FileInput from '../FileInput';
 
 const Format = () => {
@@ -43,6 +44,9 @@ const Format = () => {
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [album, setAlbum] = useState('');
+  const [range, setRange] = useState(false);
+  const [rangeStart, setRangeStart] = useState('00:00:00');
+  const [rangeEnd, setRangeEnd] = useState('00:00:00');
 
   const location = useLocation();
   const url = useMemo(() => {
@@ -61,15 +65,29 @@ const Format = () => {
     setConverting(true);
 
     try {
+      const reqData = {
+        url,
+        audioitag,
+        videoitag,
+        audioconvert
+      };
+
+      if (range) {
+        const startSeconds = timeToS(rangeStart);
+        const endSeconds = timeToS(rangeEnd);
+
+        if (startSeconds > endSeconds) {
+          throw new Error('End time must be greater than start time');
+        }
+
+        reqData.rangeStart = rangeStart;
+        reqData.rangeDuration = endSeconds - startSeconds;
+      }
+
       const response = await axios({
         url: action,
         method,
-        data: {
-          url,
-          audioitag,
-          videoitag,
-          audioconvert
-        }
+        data: reqData
       });
 
       const data = response.data;
@@ -97,7 +115,11 @@ const Format = () => {
     }
 
     setConverting(false);
-  }, [url, audioitag, videoitag, audioconvert, filename, addTag, file, title, artist, album]);
+  }, [
+    url, audioitag, videoitag, audioconvert, filename,
+    addTag, file, title, artist, album,
+    range, rangeStart, rangeEnd
+  ]);
 
   useEffect(() => {
     if (!url) return;
@@ -120,6 +142,28 @@ const Format = () => {
 
     return () => controller.abort();
   }, [url]);
+
+  useEffect(() => {
+    if (!info) return;
+
+    let audioApproxMs = 0;
+    let videoApproxMs = 0;
+    let approxMs = 0;
+
+    if (audioitag) {
+      const format = info.audioFormats.filter((format) => format.itag.toString() === audioitag)[0];
+      audioApproxMs = parseInt(format.approxDurationMs);
+    }
+
+    if (videoitag) {
+      const format = info.videoFormats.filter((format) => format.itag.toString() === videoitag)[0];
+      videoApproxMs = parseInt(format.approxDurationMs);
+    }
+
+    approxMs = videoApproxMs > audioApproxMs ? videoApproxMs : audioApproxMs;
+    setRangeStart('00:00:00');
+    setRangeEnd(msToTime(approxMs));
+  }, [info, videoitag, audioitag]);
 
   return (
     <Box display="contents">
@@ -174,6 +218,26 @@ const Format = () => {
                 })}
               </Select>
             </FormControl>
+
+            <FormControl id="range" sx={{ mt: 3 }}>
+              <Checkbox name="range" checked={range} onChange={handleChange(setRange)} />
+              <FormControl.Label>Add start and end times</FormControl.Label>
+              <FormControl.Caption>Specify start and end times of the video to download</FormControl.Caption>
+            </FormControl>
+
+            { range && (
+              <Box sx={{ display: 'flex', mt: 2 }}>
+                <FormControl id="range-start" required sx={{ mr: 3 }}>
+                  <FormControl.Label>Start:</FormControl.Label>
+                  <TextInput name="range-start" value={rangeStart} autoComplete="off" block onBlur={inputTime(setRangeStart)} onChange={handleChange(setRangeStart)} />
+                </FormControl>
+
+                <FormControl id="range-end" required>
+                  <FormControl.Label>End:</FormControl.Label>
+                  <TextInput name="range-end" value={rangeEnd} autoComplete="off" block onBlur={inputTime(setRangeEnd)} onChange={handleChange(setRangeEnd)} />
+                </FormControl>
+              </Box>
+            )}
 
             <FormControl id="audioconvert" disabled={!includesAudio} sx={{ mt: 3 }}>
               <Checkbox name="audioconvert" checked={audioconvert} onChange={handleChange(setAudioconvert)} />

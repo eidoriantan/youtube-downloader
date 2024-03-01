@@ -42,6 +42,8 @@ router.post('/', asyncWrap(async (req, res) => {
     const videoiTag = req.body.videoitag
     const audioiTag = req.body.audioitag
     const convertMP3 = req.body.audioconvert
+    const rangeStart = req.body.rangeStart
+    const rangeDuration = req.body.rangeDuration
 
     let id = ''
     let hasVideo = false
@@ -164,6 +166,28 @@ router.post('/', asyncWrap(async (req, res) => {
     } else if (hasAudio) {
       result = convertMP3 ? mp3Tempname : audioTempname
       fileExt = getExtension(convertMP3 ? 'audio/mpeg' : audioMime)
+    }
+
+    if (rangeStart && rangeDuration) {
+      const outname = result + '+' + rangeStart.split(':').join('') +
+        '+' + rangeDuration.toString()
+
+      const inpath = path.join(temp, result)
+      const outpath = path.join(temp, outname)
+      if (!fs.existsSync(outpath)) {
+        await new Promise((resolve, reject) => {
+          ffmpeg()
+            .input(inpath).inputFormat(ext)
+            .on('error', reject).on('end', resolve)
+            .setStartTime(rangeStart)
+            .setDuration(rangeDuration)
+            .format(ext)
+            .output(outpath)
+            .run()
+        })
+      }
+
+      result = outname
     }
 
     res.json({ success: true, id: result, extension: fileExt })
