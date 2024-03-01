@@ -27,7 +27,7 @@ const convert = require('./convert/')
 const download = require('./download/')
 
 const app = express()
-const port = process.env.PORT || 3001
+const port = process.env.SERVER_PORT || 3001
 const appBuild = path.resolve(__dirname, '../build')
 
 app.use(express.static(appBuild))
