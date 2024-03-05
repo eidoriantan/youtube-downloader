@@ -18,6 +18,8 @@
 
 const { app, shell, BrowserWindow, Menu } = require('electron')
 const path = require('node:path')
+
+process.env.IS_ELECTRON = '1'
 require('./server/')
 
 const port = process.env.SERVER_PORT || 3001

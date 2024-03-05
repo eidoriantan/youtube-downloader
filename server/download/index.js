@@ -20,12 +20,12 @@ const fs = require('fs')
 const path = require('path')
 
 const router = require('express').Router()
+const { temp } = require('../globals.js')
 const asyncWrap = require('../utils/async-wrap.js')
 const formats = require('../utils/formats.js')
 
 router.get('/:id', asyncWrap(async (req, res) => {
   const resultId = req.params.id || null
-  const temp = path.join(__dirname, '../../temp/')
   const filepath = path.join(temp, resultId)
   const regex = /^([a-z0-9_-]{11})_([0-9]+)(_([0-9]+))?(-mp3)?(\+([0-9]{6,})\+([0-9]+))?$/i
   const match = resultId.match(regex)

@@ -25,14 +25,10 @@ const ffmpeg = require('fluent-ffmpeg')
 const ffmpegStatic = require('ffmpeg-static')
 ffmpeg.setFfmpegPath(ffmpegStatic)
 
+const { temp } = require('../globals.js')
 const asyncWrap = require('../utils/async-wrap.js')
 const formats = require('../utils/formats.js')
-const mime = require('../utils/mime.js')
-const getExtension = mime.getExtension
-const getContainer = mime.getContainer
-
-const temp = path.join(__dirname, '../../temp/')
-if (!fs.existsSync(temp)) fs.mkdirSync(temp)
+const { getExtension, getContainer } = require('../utils/mime.js')
 
 const router = express.Router()
 
