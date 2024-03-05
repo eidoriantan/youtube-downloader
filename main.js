@@ -98,6 +98,7 @@ const createWindow = () => {
   const win = new BrowserWindow({
     center: true,
     icon,
+    show: false,
     webPreferences: {
       devTools: false,
       enableWebSQL: false
@@ -106,7 +107,9 @@ const createWindow = () => {
 
   const menu = createMenu()
   win.setMenu(menu)
+  win.maximize()
   win.loadURL(`http://localhost:${port}`)
+  win.show()
 }
 
 app.whenReady().then(() => {
