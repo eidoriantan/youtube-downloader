@@ -1,14 +1,20 @@
-const { FusesPlugin } = require('@electron-forge/plugin-fuses');
-const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const { FusesPlugin } = require('@electron-forge/plugin-fuses')
+const { FuseV1Options, FuseVersion } = require('@electron/fuses')
 const path = require('node:path')
 
-const iconPath = path.join(__dirname, 'images/icon');
-const icoPath = iconPath + '.ico';
+const iconPath = path.join(__dirname, 'images/icon')
+const icoPath = iconPath + '.ico'
 
 module.exports = {
   packagerConfig: {
     asar: true,
-    icon: iconPath
+    icon: iconPath,
+    ignore: [
+      '.github',
+      'public',
+      'src',
+      'temp'
+    ]
   },
   rebuildConfig: {},
   makers: [
@@ -17,25 +23,25 @@ module.exports = {
       config: {
         iconUrl: 'https://yt-downloader.eidoriantan.me/favicon.ico',
         setupIcon: icoPath
-      },
+      }
     },
     {
       name: '@electron-forge/maker-zip',
-      platforms: ['darwin'],
+      platforms: ['darwin']
     },
     {
       name: '@electron-forge/maker-deb',
-      config: {},
+      config: {}
     },
     {
       name: '@electron-forge/maker-rpm',
-      config: {},
+      config: {}
     },
   ],
   plugins: [
     {
       name: '@electron-forge/plugin-auto-unpack-natives',
-      config: {},
+      config: {}
     },
     // Fuses are used to enable/disable various Electron functionality
     // at package time, before code signing the application
@@ -47,6 +53,6 @@ module.exports = {
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
-    }),
-  ],
-};
+    })
+  ]
+}
