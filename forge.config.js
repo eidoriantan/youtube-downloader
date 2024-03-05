@@ -10,10 +10,10 @@ module.exports = {
     asar: true,
     icon: iconPath,
     ignore: [
-      '.github',
-      'public',
-      'src',
-      'temp'
+      /^\/\.github/,
+      /^\/public/,
+      /^\/src/,
+      /^\/temp/
     ]
   },
   rebuildConfig: {},
