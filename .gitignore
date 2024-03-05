@@ -10,6 +10,7 @@ debug.log
 
 # production
 /build
+/out
 
 # App-generated files
 temp/
