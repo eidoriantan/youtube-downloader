@@ -60,7 +60,7 @@
     "@babel/runtime": "^7.22.15",
     "@commitlint/cli": "^17.6.7",
     "@commitlint/config-conventional": "^17.6.7",
-    "@electron-forge/cli": "^7.3.0",
+    "@electron-forge/cli": "^7.3.1",
     "@electron-forge/maker-deb": "^7.3.1",
     "@electron-forge/maker-rpm": "^7.3.1",
     "@electron-forge/maker-squirrel": "^7.3.1",
