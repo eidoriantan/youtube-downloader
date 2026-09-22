@@ -22,6 +22,8 @@ import { Box, Text, Link, Spinner, FormControl, TextInput, Select, Checkbox, But
 import { AlertIcon } from '@primer/octicons-react';
 import axios from 'axios';
 
+import { getYoutubeInfo } from '../../media/youtube';
+import { normalizeYoutubeInfo } from '../../media/normalize';
 import { audioTag } from '../../utils/tag';
 import { parseBytes } from '../../utils/bytes';
 import { downloadURL } from '../../utils/download';
@@ -124,23 +126,21 @@ const Format = () => {
   useEffect(() => {
     if (!url) return;
 
-    const controller = new AbortController();
-    axios.get('/api/info', {
-      params: { url },
-      signal: controller.signal
-    }).then((infoRes) => {
-      if (!infoRes.data.success) {
-        setError(infoRes.data.message);
-        return;
-      }
+    let active = true;
 
-      setInfo(infoRes.data.info);
-      setFilename(infoRes.data.info.videoDetails.title);
+    getYoutubeInfo(url).then((youtubeInfo) => {
+      if (!active) return;
+
+      const normalizedInfo = normalizeYoutubeInfo(youtubeInfo, url);
+      setInfo(normalizedInfo);
+      setFilename(normalizedInfo.videoDetails.title);
     }).catch((error) => {
-      if (error.code !== 'ERR_CANCELED') setError(error.response.data.message);
+      if (active) setError(error.message || 'Unable to load video information');
     });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+    };
   }, [url]);
 
   useEffect(() => {

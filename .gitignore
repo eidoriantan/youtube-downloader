@@ -3,6 +3,7 @@
 
 # Ignore Node-generated files
 node_modules/
+.wrangler/
 debug.log
 
 # dotenv files

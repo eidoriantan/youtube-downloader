@@ -1,0 +1,25 @@
+name = "youtube-downloader-proxy"
+main = "worker/index.js"
+compatibility_date = "2026-09-22"
+
+[dev]
+local_protocol = "http"
+port = 8787
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:3000"
+ALLOWED_UPSTREAM_HOSTS = "www.youtube.com,youtube.com,youtubei.googleapis.com,youtube.googleapis.com,www.youtube-nocookie.com,googlevideo.com"
+
+[env.staging]
+name = "youtube-downloader-proxy-staging"
+
+[env.staging.vars]
+ALLOWED_ORIGINS = "http://localhost:3000"
+ALLOWED_UPSTREAM_HOSTS = "www.youtube.com,youtube.com,youtubei.googleapis.com,youtube.googleapis.com,www.youtube-nocookie.com,googlevideo.com"
+
+[env.production]
+name = "youtube-downloader-proxy-production"
+
+[env.production.vars]
+ALLOWED_ORIGINS = "https://yt-downloader.eidoriantan.me"
+ALLOWED_UPSTREAM_HOSTS = "www.youtube.com,youtube.com,youtubei.googleapis.com,youtube.googleapis.com,www.youtube-nocookie.com,googlevideo.com"

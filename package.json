@@ -32,6 +32,9 @@
     "start:electron": "electron-forge start",
     "build": "webpack",
     "server": "node server/index.js",
+    "worker:dev": "wrangler dev",
+    "worker:deploy:staging": "wrangler deploy --env staging",
+    "worker:deploy:production": "wrangler deploy --env production",
     "pretest": "npm run lint",
     "test": "echo 'No tests'",
     "lint": "eslint src/**/*.jsx && standard server/**/*.js",
@@ -40,6 +43,9 @@
     "make": "electron-forge make"
   },
   "dependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@primer/octicons-react": "^19.1.0",
     "@primer/react": "^35.25.1",
     "axios": "^1.6.8",
@@ -49,6 +55,7 @@
     "fluent-ffmpeg": "^2.1.3",
     "mp3tag.js": "^3.9.1",
     "styled-components": "^5.3.11",
+    "youtubei.js": "^18.0.0",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
@@ -92,6 +99,7 @@
     "terser-webpack-plugin": "^5.3.10",
     "webpack": "^5.85.1",
     "webpack-cli": "^5.1.3",
-    "webpack-dev-server": "^4.15.2"
+    "webpack-dev-server": "^4.15.2",
+    "wrangler": "^4.38.0"
   }
 }

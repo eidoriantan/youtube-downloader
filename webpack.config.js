@@ -91,6 +91,10 @@ module.exports = (env) => {
             from: appPublic,
             to: appBuild,
             filter: (filepath) => !filepath.endsWith('.html')
+          },
+          {
+            from: path.resolve(__dirname, 'node_modules/@ffmpeg/core/dist/umd'),
+            to: path.resolve(appBuild, 'assets/ffmpeg')
           }
         ]
       })
@@ -100,7 +104,7 @@ module.exports = (env) => {
       rules: [
         {
           enforce: 'pre',
-          exclude: /@babel(?:\/|\\{1,2})runtime/,
+          exclude: /node_modules/,
           test: /\.(js|jsx|css)$/,
           use: 'source-map-loader'
         },
@@ -158,7 +162,9 @@ module.exports = (env) => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': '*',
-        'Access-Control-Allow-Headers': '*'
+        'Access-Control-Allow-Headers': '*',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp'
       }
     }
   }
