@@ -26,14 +26,23 @@ const formats = require('../utils/formats.js')
 
 router.get('/:id', asyncWrap(async (req, res) => {
   const resultId = req.params.id || null
-  const filepath = path.join(temp, resultId)
   const regex = /^([a-z0-9_-]{11})_([0-9]+)(_([0-9]+))?(-mp3)?(\+([0-9]{6,})\+([0-9]+))?$/i
-  const match = resultId.match(regex)
+  const match = resultId !== null ? resultId.match(regex) : null
 
-  if (!fs.existsSync(filepath) || match === null) {
+  if (match === null) {
     res.sendStatus(400)
     return
   }
+
+  // Resolve against the actual directory listing so the joined path can only
+  // ever reference a real, existing entry inside `temp`, never an escape path.
+  const filename = fs.readdirSync(temp).find((entry) => entry === resultId)
+  if (!filename) {
+    res.sendStatus(400)
+    return
+  }
+
+  const filepath = path.join(temp, filename)
 
   let videoiTag = null
   let audioiTag = null
