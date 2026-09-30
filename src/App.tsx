@@ -1,87 +1,74 @@
-import { useState } from "react";
-import { listFormats, downloadMedia, hasVideo, hasAudio } from "./lib/engine.js";
-
-const fmtSize = (f) => {
-  const b = f.filesize || f.filesize_approx;
-  return b ? `${(b / 1048576).toFixed(1)} MB` : "size n/a";
-};
-
-const label = (f) => {
-  const kind = hasVideo(f) && hasAudio(f) ? "video+audio"
-    : hasVideo(f) ? "video only (will merge audio)" : "audio only";
-  const res = hasVideo(f) ? `${f.resolution || f.height + "p"}${f.fps ? ` ${f.fps}fps` : ""}` : `${Math.round(f.abr || f.tbr || 0)}kbps`;
-  return `${f.format_id} · ${f.ext} · ${res} · ${kind} · ${fmtSize(f)}`;
-};
-
-const Input = (props) => (
-  <input {...props} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none" />
-);
+import { Button } from "./components/Button";
+import { Field } from "./components/Field";
+import { FormatPicker } from "./components/FormatPicker";
+import { Panel } from "./components/Panel";
+import { useDownloader } from "./hooks/useDownloader";
 
 export default function App() {
-  const [proxy, setProxy] = useState(localStorage.getItem("proxy") || "http://localhost:8787/");
-  const [url, setUrl] = useState("");
-  const [info, setInfo] = useState(null);
-  const [formatId, setFormatId] = useState("");
-  const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const run = async (fn) => {
-    setBusy(true); setError("");
-    try { await fn(); } catch (e) { setError(String(e?.message || e)); setStatus(""); }
-    finally { setBusy(false); }
-  };
-
-  const fetchFormats = () => run(async () => {
-    localStorage.setItem("proxy", proxy);
-    setInfo(null);
-    const data = await listFormats(proxy, url, setStatus);
-    setInfo(data);
-    const best = [...data.formats].reverse().find((f) => hasVideo(f) && hasAudio(f)) || data.formats[data.formats.length - 1];
-    setFormatId(best?.format_id || "");
-    setStatus(`Found ${data.formats.length} formats`);
-  });
-
-  const download = () => run(async () => {
-    const format = info.formats.find((f) => f.format_id === formatId);
-    const name = await downloadMedia({ proxy, url, info, format, onStatus: setStatus });
-    setStatus(`Saved ${name}`);
-  });
+  const d = useDownloader();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 text-slate-200">
-      <h1 className="text-3xl font-bold text-white">Serverless Media Downloader</h1>
-      <p className="mt-1 text-sm text-slate-400">yt-dlp in Pyodide + ffmpeg.wasm, all running in your browser.</p>
+    <div className="min-h-screen bg-zinc-950 text-zinc-200 antialiased">
+      <main className="mx-auto max-w-2xl px-4 py-14 sm:py-20">
+        <header className="mb-10">
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
+            Serverless Media Downloader
+          </h1>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
+            yt-dlp runs in Pyodide and ffmpeg.wasm merges streams, all inside your browser.
+            Only a small CORS proxy sits in between.
+          </p>
+        </header>
 
-      <section className="mt-8 space-y-4 rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-        <label className="block text-sm">Proxy URL
-          <div className="mt-1"><Input value={proxy} onChange={(e) => setProxy(e.target.value)} placeholder="http://localhost:8787/" /></div>
-        </label>
-        <label className="block text-sm">YouTube URL
-          <div className="mt-1"><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..." /></div>
-        </label>
-        <button onClick={fetchFormats} disabled={busy || !url || !proxy}
-          className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-40">
-          {busy && !info ? "Working…" : "Get formats"}
-        </button>
-      </section>
+        <div className="space-y-5">
+          <Panel className="space-y-4">
+            <Field
+              label="Proxy URL"
+              value={d.proxy}
+              onChange={(e) => d.setProxy(e.target.value)}
+              placeholder="http://localhost:8787/"
+              hint="Saved in this browser."
+            />
+            <Field
+              label="Video URL"
+              value={d.url}
+              onChange={(e) => d.setUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=…"
+              onKeyDown={(e) => e.key === "Enter" && d.url && d.proxy && !d.busy && d.fetchFormats()}
+            />
+            <Button onClick={d.fetchFormats} disabled={!d.url || !d.proxy} loading={d.busy && !d.info}>
+              {d.busy && !d.info ? "Working…" : "Get formats"}
+            </Button>
+          </Panel>
 
-      {info && (
-        <section className="mt-6 space-y-4 rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-          <h2 className="font-semibold text-white">{info.title}</h2>
-          <select value={formatId} onChange={(e) => setFormatId(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100">
-            {info.formats.map((f) => <option key={f.format_id} value={f.format_id}>{label(f)}</option>)}
-          </select>
-          <button onClick={download} disabled={busy}
-            className="rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-500 disabled:opacity-40">
-            {busy ? "Working…" : "Download"}
-          </button>
-        </section>
-      )}
+          {d.info && (
+            <Panel className="space-y-5">
+              <div>
+                <p className="text-xs text-zinc-500">Ready to download</p>
+                <h2 className="mt-0.5 text-lg font-medium text-zinc-50">{d.info.title}</h2>
+              </div>
+              <FormatPicker formats={d.info.formats} value={d.formatId} onChange={d.setFormatId} />
+              <Button onClick={d.download} disabled={!d.formatId} loading={d.busy}>
+                {d.busy ? "Working…" : "Download"}
+              </Button>
+            </Panel>
+          )}
 
-      {status && <p className="mt-4 text-sm text-slate-400">{status}</p>}
-      {error && <pre className="mt-4 whitespace-pre-wrap rounded-lg bg-red-950/60 p-3 text-xs text-red-300">{error}</pre>}
-    </main>
+          <div aria-live="polite" className="space-y-3">
+            {d.status && (
+              <p className="flex items-center gap-2 text-sm text-zinc-400">
+                {d.busy && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal-400" />}
+                {d.status}
+              </p>
+            )}
+            {d.error && (
+              <pre className="whitespace-pre-wrap rounded-lg border border-red-900/60 bg-red-950/40 p-3 text-xs leading-relaxed text-red-300">
+                {d.error}
+              </pre>
+            )}
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
