@@ -1,21 +1,28 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
-import type { DownloadedStream, MergedMedia, StatusHandler } from "../types";
+import type { DownloadedStream, MergedMedia, StatusHandler, StepReporter } from "../types";
 
 const CORE_BASE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
 
 let ffPromise: Promise<FFmpeg> | null = null;
 
-function getFFmpeg(onStatus: StatusHandler): Promise<FFmpeg> {
+/** Loads ffmpeg.wasm once; retries on the next call if a previous attempt failed. */
+export function getFFmpeg(report: StepReporter = () => {}): Promise<FFmpeg> {
   if (!ffPromise) {
     ffPromise = (async () => {
-      onStatus("Loading ffmpeg.wasm…");
-      const ff = new FFmpeg();
-      await ff.load({
-        coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, "application/wasm"),
-      });
-      return ff;
+      report("ffmpeg", "active");
+      try {
+        const ff = new FFmpeg();
+        await ff.load({
+          coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, "text/javascript"),
+          wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, "application/wasm"),
+        });
+        report("ffmpeg", "done");
+        return ff;
+      } catch (e) {
+        report("ffmpeg", "error");
+        throw e;
+      }
     })().catch((e) => {
       ffPromise = null;
       throw e;
@@ -43,7 +50,7 @@ export async function mergeStreams(args: {
   const out = `out.${ext}`;
 
   onStatus("Merging audio and video…");
-  const ff = await getFFmpeg(onStatus);
+  const ff = await getFFmpeg(); // already loaded at startup; retries if that failed
   await ff.writeFile(vIn, primary.data);
   await ff.writeFile(aIn, audio.data);
   const code = await ff.exec(["-i", vIn, "-i", aIn, "-map", "0:v:0", "-map", "1:a:0", "-c", "copy", out]);

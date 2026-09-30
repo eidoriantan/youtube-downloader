@@ -66,3 +66,22 @@ export interface DownloadOptions {
   format: MediaFormat;
   onStatus: StatusHandler;
 }
+
+/** Steps shown on the loading screen, in the order they run. */
+export type LoadStepId = "runtime" | "packages" | "ytdlp" | "ffmpeg";
+export type LoadStepState = "pending" | "active" | "done" | "error";
+
+export interface LoadStep {
+  id: LoadStepId;
+  label: string;
+  state: LoadStepState;
+}
+
+export interface LoadState {
+  steps: LoadStep[];
+  ready: boolean;
+  /** Set when a required step failed. */
+  error: string | null;
+}
+
+export type StepReporter = (id: LoadStepId, state: LoadStepState) => void;

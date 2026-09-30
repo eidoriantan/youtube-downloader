@@ -1,14 +1,18 @@
 import { Button } from "./components/Button";
 import { Field } from "./components/Field";
+import { LoadingScreen } from "./components/LoadingScreen";
 import { FormatPicker } from "./components/FormatPicker";
 import { Panel } from "./components/Panel";
 import { useDownloader } from "./hooks/useDownloader";
+import { useEngine } from "./hooks/useEngine";
 
 export default function App() {
   const d = useDownloader();
+  const engine = useEngine();
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-200 antialiased">
+    <div className="min-h-screen bg-zinc-950 text-zinc-200 antialiased" aria-busy={!engine.ready}>
+      <LoadingScreen steps={engine.steps} ready={engine.ready} error={engine.error} onRetry={engine.retry} />
       <main className="mx-auto max-w-2xl px-4 py-14 sm:py-20">
         <header className="mb-10">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
