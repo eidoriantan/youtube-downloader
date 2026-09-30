@@ -16,7 +16,7 @@ export default function App() {
       <main className="mx-auto max-w-2xl px-4 py-14 sm:py-20">
         <header className="mb-10">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
-            Serverless Media Downloader
+            YouTube Downloader
           </h1>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
             yt-dlp runs in Pyodide and ffmpeg.wasm merges streams, all inside your browser.
