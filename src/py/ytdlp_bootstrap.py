@@ -6,7 +6,7 @@ from js import XMLHttpRequest
 
 _original_xhr_open = XMLHttpRequest.prototype.open
 _original_xhr_set_header = XMLHttpRequest.prototype.setRequestHeader
-CORS_PROXY = "http://localhost:8787/"
+CORS_PROXY = "https://cf-proxy.eidoriantan.com/"
 
 _FORBIDDEN_HEADERS = {
     "accept-charset", "accept-encoding", "access-control-request-headers",

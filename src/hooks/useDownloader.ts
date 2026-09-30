@@ -6,7 +6,7 @@ import { syncProxy } from "../lib/pyodide";
 import type { MediaInfo } from "../types";
 
 // Shared default proxy. It is rate-limited; the UI tells users to deploy their own.
-const DEFAULT_PROXY = "http://localhost:8787/";
+const DEFAULT_PROXY = "https://cf-proxy.eidoriantan.com/";
 const PROXY_KEY = "proxy";
 
 function loadProxy(): string {

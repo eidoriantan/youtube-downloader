@@ -40,7 +40,7 @@ export default function App() {
               label="Proxy URL"
               value={d.proxy}
               onChange={(e) => d.setProxy(e.target.value)}
-              placeholder="http://localhost:8787/"
+              placeholder="https://cf-proxy.eidoriantan.com"
               hint="Applied immediately and saved in this browser."
             />
             <div className="space-y-2">
