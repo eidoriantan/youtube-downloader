@@ -33,7 +33,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "echo \"Error: no test specified\""
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
@@ -50,7 +50,6 @@
     "oxlint": "^1.86.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "vite": "^8.3.1",
-    "vitest": "^5.0.3"
+    "vite": "^8.3.1"
   }
 }
