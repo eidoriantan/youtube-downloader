@@ -1,6 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { downloadMedia, listFormats } from "../lib/engine";
 import { pickDefaultFormat } from "../lib/format";
+import { syncProxy } from "../lib/pyodide";
 import type { MediaInfo } from "../types";
 
 const DEFAULT_PROXY = "http://localhost:8787/";
@@ -23,6 +24,12 @@ export function useDownloader() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Keep the Python side and localStorage in step with the input as it changes.
+  useEffect(() => {
+    syncProxy(proxy);
+    localStorage.setItem(PROXY_KEY, proxy);
+  }, [proxy]);
+
   const run = useCallback(async (fn: () => Promise<void>) => {
     setBusy(true);
     setError("");
@@ -38,11 +45,6 @@ export function useDownloader() {
 
   const fetchFormats = () =>
     run(async () => {
-      try {
-        localStorage.setItem(PROXY_KEY, proxy);
-      } catch {
-        /* storage unavailable; proxy just won't persist */
-      }
       setInfo(null);
       const data = await listFormats(proxy, url, setStatus);
       setInfo(data);

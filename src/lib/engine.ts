@@ -1,6 +1,6 @@
 import { mergeStreams } from "./ffmpeg";
 import { hasAudio, hasVideo, pickAudio, sanitizeFilename } from "./format";
-import { initPyodide, setProxy } from "./pyodide";
+import { initPyodide, syncProxy } from "./pyodide";
 import { saveBlob } from "./save";
 import type {
   DownloadedStream,
@@ -23,8 +23,8 @@ export async function listFormats(
   url: string,
   onStatus: StatusHandler,
 ): Promise<MediaInfo> {
-  const pyodide = await initPyodide(onStatus);
-  setProxy(proxy);
+  const pyodide = await initPyodide();
+  syncProxy(proxy);
   pyodide.globals.set("TARGET_URL", url);
   onStatus("Fetching formats…");
   const out = (await pyodide.runPythonAsync(listPy)) as string;
@@ -39,8 +39,8 @@ export async function downloadStreams({
   format,
   onStatus,
 }: DownloadOptions): Promise<DownloadedStreams> {
-  const pyodide = await initPyodide(onStatus);
-  setProxy(proxy);
+  const pyodide = await initPyodide();
+  syncProxy(proxy);
 
   const ids = [format.format_id];
   let audio: MediaFormat | undefined;
