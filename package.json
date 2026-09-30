@@ -5,14 +5,15 @@
   "private": true,
   "description": "Youtube video and audio downloader using youtube-dl",
   "keywords": [
-    "node",
     "react",
-    "express",
     "youtube",
-    "ytdl",
     "youtube-dl",
-    "download",
-    "downloader"
+    "downloader",
+    "serverless",
+    "yt-dlp",
+    "wasm",
+    "ffmpeg.wasm",
+    "pyodide"
   ],
   "homepage": "https://ytdl.eidoriantan.com",
   "bugs": "https://github.com/eidoriantan/youtube-downloader/issues",
