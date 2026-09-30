@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { downloadMedia, listFormats } from "../lib/engine";
+import { friendlyError } from "../lib/errors";
 import { pickDefaultFormat } from "../lib/format";
 import { syncProxy } from "../lib/pyodide";
 import type { MediaInfo } from "../types";
 
+// Shared default proxy. It is rate-limited; the UI tells users to deploy their own.
 const DEFAULT_PROXY = "http://localhost:8787/";
 const PROXY_KEY = "proxy";
 
@@ -27,7 +29,11 @@ export function useDownloader() {
   // Keep the Python side and localStorage in step with the input as it changes.
   useEffect(() => {
     syncProxy(proxy);
-    localStorage.setItem(PROXY_KEY, proxy);
+    try {
+      localStorage.setItem(PROXY_KEY, proxy);
+    } catch {
+      /* storage unavailable; proxy just won't persist */
+    }
   }, [proxy]);
 
   const run = useCallback(async (fn: () => Promise<void>) => {
@@ -36,7 +42,7 @@ export function useDownloader() {
     try {
       await fn();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(friendlyError(e));
       setStatus("");
     } finally {
       setBusy(false);

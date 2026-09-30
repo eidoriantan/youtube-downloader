@@ -1,22 +1,14 @@
-import type { JSX } from "react";
+import { Check, Circle, LoaderCircle, RotateCw, X } from "lucide-react";
+import type { ReactNode } from "react";
 import type { LoadState, LoadStepState } from "../types";
 import { Button } from "./Button";
+import { ErrorAlert } from "./ErrorAlert";
 
-const icon: Record<LoadStepState, JSX.Element> = {
-  pending: <span className="h-2 w-2 rounded-full bg-zinc-700" />,
-  active: (
-    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-teal-400/30 border-t-teal-400 motion-reduce:animate-none" />
-  ),
-  done: (
-    <svg viewBox="0 0 16 16" className="h-4 w-4 text-teal-400" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M3 8.5l3.2 3L13 4.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  error: (
-    <svg viewBox="0 0 16 16" className="h-4 w-4 text-red-400" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" />
-    </svg>
-  ),
+const icon: Record<LoadStepState, ReactNode> = {
+  pending: <Circle className="h-2 w-2 fill-zinc-700 text-zinc-700" />,
+  active: <LoaderCircle className="h-4 w-4 animate-spin text-teal-400 motion-reduce:animate-none" />,
+  done: <Check className="h-4 w-4 text-teal-400" />,
+  error: <X className="h-4 w-4 text-red-400" />,
 };
 
 interface LoadingScreenProps extends Pick<LoadState, "steps" | "ready" | "error"> {
@@ -28,12 +20,8 @@ export function LoadingScreen({ steps, ready, error, onRetry }: LoadingScreenPro
   const done = steps.filter((s) => s.state === "done").length;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Loading"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950 px-4"
-    >
+    <div role="dialog" aria-modal="true" aria-label="Loading"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950 px-4">
       <div className="w-full max-w-sm">
         <h2 className="text-lg font-medium text-zinc-50">
           {error ? "Couldn't finish loading" : "Getting things ready"}
@@ -51,7 +39,7 @@ export function LoadingScreen({ steps, ready, error, onRetry }: LoadingScreenPro
         <ul className="mt-5 space-y-3">
           {steps.map((s) => (
             <li key={s.id} className="flex items-center gap-3 text-sm">
-              <span className="flex h-4 w-4 items-center justify-center">{icon[s.state]}</span>
+              <span className="flex h-4 w-4 items-center justify-center" aria-hidden="true">{icon[s.state]}</span>
               <span className={s.state === "pending" ? "text-zinc-600" : s.state === "error" ? "text-red-300" : "text-zinc-200"}>
                 {s.label}
               </span>
@@ -61,8 +49,8 @@ export function LoadingScreen({ steps, ready, error, onRetry }: LoadingScreenPro
 
         {error && (
           <div className="mt-6 space-y-4">
-            <pre className="whitespace-pre-wrap rounded-lg border border-red-900/60 bg-red-950/40 p-3 text-xs text-red-300">{error}</pre>
-            <Button onClick={onRetry}>Try again</Button>
+            <ErrorAlert message={error} />
+            <Button onClick={onRetry} icon={<RotateCw className="h-4 w-4" />}>Try again</Button>
           </div>
         )}
       </div>

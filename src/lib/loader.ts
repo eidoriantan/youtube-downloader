@@ -1,5 +1,6 @@
 import { getFFmpeg } from "./ffmpeg";
 import { initPyodide } from "./pyodide";
+import { friendlyError } from "./errors";
 import type { LoadState, LoadStep, LoadStepId, LoadStepState } from "../types";
 
 const LABELS: Record<LoadStepId, string> = {
@@ -45,7 +46,7 @@ export function startLoading(): Promise<void> {
       .then(() => set({ ...state, ready: true }))
       .catch((e) => {
         promise = null;
-        set({ ...state, error: e instanceof Error ? e.message : String(e) });
+        set({ ...state, error: friendlyError(e) });
         throw e;
       });
   }
