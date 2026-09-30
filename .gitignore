@@ -1,22 +1,27 @@
-
-.DS_Store
-
-# Ignore Node-generated files
-node_modules/
-.wrangler/
-debug.log
-
-# dotenv files
-.env
-
-# production
-/build
-/out
-
-# App-generated files
-temp/
-
-# debugs
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.wrangler/
+.env
