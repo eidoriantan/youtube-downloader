@@ -50,6 +50,7 @@
     "oxlint": "^1.86.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "vite": "^8.3.1"
+    "vite": "^8.3.1",
+    "vite-plugin-sitemap": "^0.8.2"
   }
 }
