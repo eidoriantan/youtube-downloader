@@ -18,6 +18,21 @@ export { hasVideo, hasAudio, mergeStreams };
 
 const DL_DIR = "/mnt/dl";
 
+/**
+ * A YouTube watch URL can include a playlist ID alongside the selected video.
+ * Keep only `v` so yt-dlp does not expand the playlist for either operation.
+ */
+export function singleVideoUrl(url: string): string {
+  const parsed = new URL(url);
+  const videoId = parsed.searchParams.get("v");
+  if (!videoId) return url;
+
+  parsed.search = "";
+  parsed.searchParams.set("v", videoId);
+  parsed.hash = "";
+  return parsed.toString();
+}
+
 export async function listFormats(
   proxy: string,
   url: string,
@@ -25,7 +40,7 @@ export async function listFormats(
 ): Promise<MediaInfo> {
   const pyodide = await initPyodide();
   syncProxy(proxy);
-  pyodide.globals.set("TARGET_URL", url);
+  pyodide.globals.set("TARGET_URL", singleVideoUrl(url));
   onStatus("Fetching formats…");
   const out = (await pyodide.runPythonAsync(listPy)) as string;
   return JSON.parse(out) as MediaInfo;
@@ -49,7 +64,7 @@ export async function downloadStreams({
     if (audio) ids.push(audio.format_id);
   }
 
-  pyodide.globals.set("TARGET_URL", url);
+  pyodide.globals.set("TARGET_URL", singleVideoUrl(url));
   pyodide.globals.set("FORMAT_IDS", pyodide.toPy(ids));
   onStatus("Downloading (the page may freeze while data streams in)…");
   await pyodide.runPythonAsync(downloadPy);
