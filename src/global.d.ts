@@ -23,8 +23,8 @@ interface PyodideInterface {
   FS: PyodideFS;
 }
 
-interface Window {
-  /** Injected by the Pyodide <script> tag in index.html. */
+/** The Pyodide ES module, imported from the CDN inside the worker. */
+interface PyodideModule {
   loadPyodide(options?: Record<string, unknown>): Promise<PyodideInterface>;
 }
 

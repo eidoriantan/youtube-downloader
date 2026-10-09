@@ -11,7 +11,8 @@
   <meta name="apple-mobile-web-app-title" content="Media Downloader" />
   <link rel="manifest" href="/site.webmanifest" />
 
-  <script src="https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.js"></script>
+  <!-- Pyodide and ffmpeg.wasm are fetched from jsDelivr; open the connection early. -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 
   <title>YouTube Downloader</title>
 </head>

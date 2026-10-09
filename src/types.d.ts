@@ -85,3 +85,28 @@ export interface LoadState {
 }
 
 export type StepReporter = (id: LoadStepId, state: LoadStepState) => void;
+
+/** A file yt-dlp wrote inside the Pyodide worker. */
+export interface DownloadedFile {
+  name: string;
+  data: Uint8Array;
+}
+
+/** Work the Pyodide worker can be asked to do; each call gets a reply. */
+export type PyCall =
+  | { type: "listFormats"; url: string }
+  | { type: "download"; url: string; formatIds: string[] };
+
+/** Messages from the page to the Pyodide worker. */
+export type PyRequest =
+  | { type: "init" }
+  | { type: "proxy"; proxy: string }
+  | (PyCall & { id: number });
+
+/** Messages from the Pyodide worker to the page. */
+export type PyResponse =
+  | { type: "step"; step: LoadStepId; state: LoadStepState }
+  | { type: "ready" }
+  | { type: "initError"; message: string }
+  | { type: "result"; id: number; value: unknown }
+  | { type: "error"; id: number; message: string };

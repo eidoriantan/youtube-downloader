@@ -73,15 +73,11 @@ from yt_dlp.extractor.youtube.jsc.provider import (
 import yt_dlp_ejs.yt.solver as _ejs_solver
 
 
-def _eval_in_sandbox_frame(code: str) -> str:
-    iframe = js.document.createElement("iframe")
-    iframe.style.display = "none"
-    iframe.setAttribute("aria-hidden", "true")
-    js.document.body.appendChild(iframe)
-    try:
-        return iframe.contentWindow.eval(code)
-    finally:
-        iframe.remove()
+def _eval_in_worker_scope(code: str) -> str:
+    # This runs inside a dedicated Web Worker, which has no DOM to host a
+    # sandbox iframe. Indirect eval runs the solver in the worker's global
+    # scope, which nothing else shares.
+    return js.eval(code)
 
 
 @register_provider
@@ -133,7 +129,7 @@ class PyodideJCP(JsChallengeProvider):
             """
 
             try:
-                stdout = _eval_in_sandbox_frame(program)
+                stdout = _eval_in_worker_scope(program)
             except Exception as e:
                 raise JsChallengeProviderError(f"Error evaluating challenge solver JS: {e}") from e
 

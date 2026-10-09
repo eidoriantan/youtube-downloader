@@ -1,10 +1,10 @@
 import { Download, Search } from "lucide-react";
 import { Button } from "./components/Button";
+import { EngineStatus } from "./components/EngineStatus";
 import { ErrorAlert } from "./components/ErrorAlert";
 import { Field } from "./components/Field";
 import { FormatPicker } from "./components/FormatPicker";
 import { GithubLink } from "./components/GithubLink";
-import { LoadingScreen } from "./components/LoadingScreen";
 import { Notice } from "./components/Notice";
 import { Panel } from "./components/Panel";
 import { useDownloader } from "./hooks/useDownloader";
@@ -17,9 +17,7 @@ export default function App() {
   const engine = useEngine();
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-200 antialiased" aria-busy={!engine.ready}>
-      <LoadingScreen steps={engine.steps} ready={engine.ready} error={engine.error} onRetry={engine.retry} />
-
+    <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-200 antialiased">
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-14 sm:py-20">
         <header className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-[400px]">
@@ -35,6 +33,8 @@ export default function App() {
         </header>
 
         <div className="space-y-5">
+          <EngineStatus steps={engine.steps} ready={engine.ready} error={engine.error} onRetry={engine.retry} />
+
           <Panel className="space-y-4">
             <Field
               label="Proxy URL"

@@ -1,9 +1,15 @@
-import bootstrapPy from "../py/ytdlp_bootstrap.py?raw";
-import type { LoadStepId, StepReporter } from "../types";
+import type { DownloadedFile, PyCall, PyRequest, PyResponse, StepReporter } from "../types";
 
-let pyPromise: Promise<PyodideInterface> | null = null;
-let pyInstance: PyodideInterface | null = null;
+interface Pending {
+  resolve: (value: unknown) => void;
+  reject: (reason: Error) => void;
+}
+
+let worker: Worker | null = null;
+let pyPromise: Promise<void> | null = null;
 let currentProxy = "";
+let nextId = 0;
+const pending = new Map<number, Pending>();
 
 /** Normalises user input; the Python side appends `?url=...` itself. */
 export function normalizeProxy(proxy: string): string {
@@ -13,11 +19,7 @@ export function normalizeProxy(proxy: string): string {
   return s.split("?")[0];
 }
 
-/** Pushes the current proxy into every place the Python side can read it. */
-function publishProxy(pyodide: PyodideInterface | null): void {
-  globalThis.YTDLP_CORS_PROXY = currentProxy || undefined; // readable as `js.YTDLP_CORS_PROXY`
-  pyodide?.globals.set("CORS_PROXY", currentProxy); //          readable as `CORS_PROXY` in Python
-}
+const post = (req: PyRequest) => worker?.postMessage(req);
 
 /**
  * Updates the proxy everywhere. Safe to call at any time, before or after
@@ -25,58 +27,76 @@ function publishProxy(pyodide: PyodideInterface | null): void {
  */
 export function syncProxy(proxy: string): void {
   currentProxy = normalizeProxy(proxy);
-  publishProxy(pyInstance);
+  post({ type: "proxy", proxy: currentProxy });
 }
 
-/** The Pyodide <script> in index.html may still be loading; wait for it. */
-async function waitForPyodideScript(timeoutMs = 20_000): Promise<void> {
-  const start = Date.now();
-  while (typeof window.loadPyodide !== "function") {
-    if (Date.now() - start > timeoutMs) {
-      throw new Error("Pyodide script did not load. Check the <script> tag in index.html and your network.");
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
+/** Drops a broken worker and fails everything that was waiting on it. */
+function reset(error: Error): void {
+  worker?.terminate();
+  worker = null;
+  pyPromise = null;
+  pending.forEach((p) => p.reject(error));
+  pending.clear();
 }
 
 /**
- * Loads Pyodide, micropip, pyodide-http and yt-dlp once. Safe to call many
- * times; retries on the next call if a previous attempt failed.
+ * Starts the Pyodide worker, which loads micropip, pyodide-http and yt-dlp
+ * once. Safe to call many times; retries on the next call if a previous
+ * attempt failed.
  */
-export function initPyodide(report: StepReporter = () => {}): Promise<PyodideInterface> {
+export function initPyodide(report: StepReporter = () => {}): Promise<void> {
   if (!pyPromise) {
-    pyPromise = (async () => {
-      let current: LoadStepId = "runtime";
-      const begin = (id: LoadStepId) => {
-        current = id;
-        report(id, "active");
+    pyPromise = new Promise<void>((resolve, reject) => {
+      const w = new Worker(new URL("./pyodide.worker.ts", import.meta.url), { type: "module" });
+      worker = w;
+      w.onmessage = (e: MessageEvent<PyResponse>) => {
+        const msg = e.data;
+        switch (msg.type) {
+          case "step":
+            report(msg.step, msg.state);
+            break;
+          case "ready":
+            resolve();
+            break;
+          case "initError":
+            reject(new Error(msg.message));
+            break;
+          case "result":
+          case "error": {
+            const p = pending.get(msg.id);
+            pending.delete(msg.id);
+            if (msg.type === "result") p?.resolve(msg.value);
+            else p?.reject(new Error(msg.message));
+          }
+        }
       };
-      try {
-        begin("runtime");
-        await waitForPyodideScript();
-        const pyodide = await window.loadPyodide();
-        report("runtime", "done");
-
-        begin("packages");
-        await pyodide.loadPackage(["micropip", "pyodide-http"]);
-        report("packages", "done");
-
-        begin("ytdlp");
-        const micropip = pyodide.pyimport("micropip");
-        await micropip.install(["yt-dlp", "yt-dlp-ejs"]);
-        publishProxy(pyodide); // before the bootstrap runs, in case it reads the proxy
-        await pyodide.runPythonAsync(bootstrapPy);
-        pyInstance = pyodide;
-        report("ytdlp", "done");
-        return pyodide;
-      } catch (e) {
-        report(current, "error");
-        throw e;
-      }
-    })().catch((e) => {
-      pyPromise = null;
+      w.onerror = (e) => {
+        const error = new Error(e.message || "The Python worker crashed.");
+        reject(error);
+        reset(error);
+      };
+      post({ type: "proxy", proxy: currentProxy });
+      post({ type: "init" });
+    }).catch((e: Error) => {
+      reset(e);
       throw e;
     });
   }
   return pyPromise;
 }
+
+async function call<T>(req: PyCall): Promise<T> {
+  await initPyodide();
+  const id = ++nextId;
+  return new Promise<T>((resolve, reject) => {
+    pending.set(id, { resolve: resolve as (value: unknown) => void, reject });
+    post({ ...req, id });
+  });
+}
+
+/** Returns the JSON produced by `list_formats.py`. */
+export const runListFormats = (url: string) => call<string>({ type: "listFormats", url });
+
+/** Downloads each format to its own file; see `download.py` for naming. */
+export const runDownload = (url: string, formatIds: string[]) =>
+  call<DownloadedFile[]>({ type: "download", url, formatIds });

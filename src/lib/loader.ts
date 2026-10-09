@@ -1,7 +1,7 @@
 import { getFFmpeg } from "./ffmpeg";
 import { initPyodide } from "./pyodide";
 import { friendlyError } from "./errors";
-import type { LoadState, LoadStep, LoadStepId, LoadStepState } from "../types";
+import type { LoadState, LoadStep, LoadStepId, LoadStepState, StatusHandler } from "../types";
 
 const LABELS: Record<LoadStepId, string> = {
   runtime: "Python runtime",
@@ -51,4 +51,16 @@ export function startLoading(): Promise<void> {
       });
   }
   return promise;
+}
+
+/**
+ * Resolves once yt-dlp is usable. Starts (or retries) loading if needed so the
+ * steps shown in the UI stay in sync, but does not wait for ffmpeg.
+ */
+export async function loadPython(onStatus: StatusHandler): Promise<void> {
+  if (state.steps.find((s) => s.id === "ytdlp")?.state !== "done") {
+    onStatus("Waiting for yt-dlp to finish loading…");
+  }
+  startLoading().catch(() => {});
+  await initPyodide();
 }

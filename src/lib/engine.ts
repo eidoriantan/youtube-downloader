@@ -1,6 +1,7 @@
 import { mergeStreams } from "./ffmpeg";
 import { hasAudio, hasVideo, pickAudio, sanitizeFilename } from "./format";
-import { initPyodide, syncProxy } from "./pyodide";
+import { loadPython } from "./loader";
+import { runDownload, runListFormats, syncProxy } from "./pyodide";
 import { saveBlob } from "./save";
 import type {
   DownloadedStream,
@@ -11,12 +12,7 @@ import type {
   StatusHandler,
 } from "../types";
 
-import listPy from "../py/list_formats.py?raw";
-import downloadPy from "../py/download.py?raw";
-
 export { hasVideo, hasAudio, mergeStreams };
-
-const DL_DIR = "/mnt/dl";
 
 /**
  * A YouTube watch URL can include a playlist ID alongside the selected video.
@@ -38,12 +34,10 @@ export async function listFormats(
   url: string,
   onStatus: StatusHandler,
 ): Promise<MediaInfo> {
-  const pyodide = await initPyodide();
   syncProxy(proxy);
-  pyodide.globals.set("TARGET_URL", singleVideoUrl(url));
+  await loadPython(onStatus);
   onStatus("Fetching formats…");
-  const out = (await pyodide.runPythonAsync(listPy)) as string;
-  return JSON.parse(out) as MediaInfo;
+  return JSON.parse(await runListFormats(singleVideoUrl(url))) as MediaInfo;
 }
 
 /** Step 1: fetch raw stream(s) via yt-dlp. No merging happens here. */
@@ -54,8 +48,8 @@ export async function downloadStreams({
   format,
   onStatus,
 }: DownloadOptions): Promise<DownloadedStreams> {
-  const pyodide = await initPyodide();
   syncProxy(proxy);
+  await loadPython(onStatus);
 
   const ids = [format.format_id];
   let audio: MediaFormat | undefined;
@@ -64,18 +58,13 @@ export async function downloadStreams({
     if (audio) ids.push(audio.format_id);
   }
 
-  pyodide.globals.set("TARGET_URL", singleVideoUrl(url));
-  pyodide.globals.set("FORMAT_IDS", pyodide.toPy(ids));
-  onStatus("Downloading (the page may freeze while data streams in)…");
-  await pyodide.runPythonAsync(downloadPy);
+  onStatus("Downloading…");
+  const files = await runDownload(singleVideoUrl(url), ids);
 
-  const files = pyodide.FS.readdir(DL_DIR).filter((n) => n !== "." && n !== "..");
   const grab = (f: MediaFormat): DownloadedStream => {
-    const name = files.find((n) => n.includes(`.f${f.format_id}.`));
-    if (!name) throw new Error(`Missing downloaded file for format ${f.format_id}`);
-    const data = pyodide.FS.readFile(`${DL_DIR}/${name}`);
-    pyodide.FS.unlink(`${DL_DIR}/${name}`);
-    return { data, ext: name.split(".").pop() as string, format: f };
+    const file = files.find((x) => x.name.includes(`.f${f.format_id}.`));
+    if (!file) throw new Error(`Missing downloaded file for format ${f.format_id}`);
+    return { data: file.data, ext: file.name.split(".").pop() as string, format: f };
   };
   return { primary: grab(format), audio: audio ? grab(audio) : null };
 }
