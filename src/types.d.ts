@@ -59,11 +59,33 @@ export interface MergedMedia {
   ext: "mp4" | "webm" | "mkv";
 }
 
+/** MP3 bitrates offered in the UI (kbps, constant bitrate). */
+export type Mp3Bitrate = 128 | 192 | 256 | 320;
+
+/** ID3 fields the user can set; blank fields are not written. */
+export interface Mp3Metadata {
+  title: string;
+  artist: string;
+  album: string;
+  year: string;
+  genre: string;
+  track: string;
+  /** Embedded as the front cover picture. */
+  cover: File | null;
+}
+
+export interface Mp3Options {
+  bitrate: Mp3Bitrate;
+  metadata: Mp3Metadata;
+}
+
 export interface DownloadOptions {
   proxy: string;
   url: string;
   info: MediaInfo;
   format: MediaFormat;
+  /** Convert an audio-only download to a tagged MP3. */
+  mp3?: Mp3Options | null;
   onStatus: StatusHandler;
 }
 

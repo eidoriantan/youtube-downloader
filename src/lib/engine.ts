@@ -1,5 +1,6 @@
-import { mergeStreams } from "./ffmpeg";
+import { convertToMp3, mergeStreams } from "./ffmpeg";
 import { hasAudio, hasVideo, pickAudio, sanitizeFilename } from "./format";
+import { writeMp3Tags } from "./id3";
 import { loadPython } from "./loader";
 import { runDownload, runListFormats, syncProxy } from "./pyodide";
 import { saveBlob } from "./save";
@@ -71,12 +72,20 @@ export async function downloadStreams({
 
 /** Downloads, merges if needed, saves to disk, and returns the filename. */
 export async function downloadMedia(opts: DownloadOptions): Promise<string> {
-  const { info, format, onStatus } = opts;
+  const { info, format, mp3, onStatus } = opts;
   const { primary, audio } = await downloadStreams(opts);
 
   let data: Uint8Array = primary.data;
   let ext: string = primary.ext;
   if (audio) ({ data, ext } = await mergeStreams({ primary, audio, onStatus }));
+
+  // MP3 conversion is only offered for audio-only formats.
+  if (mp3 && !hasVideo(format)) {
+    data = await convertToMp3({ audio: primary, bitrate: mp3.bitrate, onStatus });
+    onStatus("Writing MP3 tags…");
+    data = await writeMp3Tags(data, mp3.metadata);
+    ext = "mp3";
+  }
 
   const filename = `${sanitizeFilename(info.title || info.id)}.${ext}`;
   saveBlob(data, ext, hasVideo(format), filename);

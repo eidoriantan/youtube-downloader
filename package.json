@@ -39,6 +39,7 @@
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "lucide-react": "^1.49.0",
+    "mp3tag.js": "^3.17.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

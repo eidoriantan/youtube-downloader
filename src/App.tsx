@@ -1,20 +1,26 @@
 import { Download, Search } from "lucide-react";
+
 import { Button } from "./components/Button";
 import { EngineStatus } from "./components/EngineStatus";
 import { ErrorAlert } from "./components/ErrorAlert";
 import { Field } from "./components/Field";
 import { FormatPicker } from "./components/FormatPicker";
 import { GithubLink } from "./components/GithubLink";
+import { Mp3Options } from "./components/Mp3Options";
 import { Notice } from "./components/Notice";
 import { Panel } from "./components/Panel";
 import { useDownloader } from "./hooks/useDownloader";
 import { useEngine } from "./hooks/useEngine";
+import { hasVideo } from "./lib/format";
 
 const link = "text-teal-300 underline decoration-teal-300/40 underline-offset-2 hover:decoration-teal-300";
+const now = new Date();
 
 export default function App() {
   const d = useDownloader();
   const engine = useEngine();
+  const year = now.getFullYear();
+  const selected = d.info?.formats.find((f) => f.format_id === d.formatId);
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-200 antialiased">
@@ -76,6 +82,16 @@ export default function App() {
                 <h2 className="mt-0.5 text-lg font-medium text-zinc-50">{d.info.title}</h2>
               </div>
               <FormatPicker formats={d.info.formats} value={d.formatId} onChange={d.setFormatId} />
+              {selected && !hasVideo(selected) && (
+                <Mp3Options
+                  enabled={d.toMp3}
+                  onEnabledChange={d.setToMp3}
+                  bitrate={d.bitrate}
+                  onBitrateChange={d.setBitrate}
+                  metadata={d.metadata}
+                  onMetadataChange={d.setMetadata}
+                />
+              )}
               <Button onClick={d.download} disabled={!d.formatId} loading={d.busy}
                 icon={<Download className="h-4 w-4" />}>
                 {d.busy ? "Working…" : "Download"}
@@ -96,7 +112,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-zinc-900 px-4 py-6 text-center text-xs text-zinc-600">
-        © {new Date().getFullYear()} eidoriantan
+        © {year} eidoriantan
       </footer>
     </div>
   );
