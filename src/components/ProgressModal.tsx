@@ -7,10 +7,10 @@ import { ErrorAlert } from "./ErrorAlert";
 type StageState = "pending" | "active" | "done" | "error";
 
 const icon: Record<StageState, ReactNode> = {
-  pending: <Circle className="h-2 w-2 fill-zinc-700 text-zinc-700" />,
-  active: <LoaderCircle className="h-4 w-4 animate-spin text-teal-400 motion-reduce:animate-none" />,
-  done: <Check className="h-4 w-4 text-teal-400" />,
-  error: <X className="h-4 w-4 text-red-400" />,
+  pending: <Circle className="h-2 w-2 fill-ink-700 text-ink-700" />,
+  active: <LoaderCircle className="h-4 w-4 animate-spin text-ember-400 motion-reduce:animate-none" />,
+  done: <Check className="h-4 w-4 text-ember-400" />,
+  error: <X className="h-4 w-4 text-rose-400" />,
 };
 
 interface ProgressModalProps {
@@ -63,24 +63,24 @@ export function ProgressModal({ open, title, progress, busy, savedAs, error, onC
         e.preventDefault(); // Escape only closes once the work is over
         if (!busy) onClose();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-0 text-zinc-200 shadow-2xl backdrop:bg-zinc-950/80 backdrop:backdrop-blur-sm"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-3xl border border-ink-700/70 bg-ink-900 p-0 outline-none text-ink-200 shadow-[0_40px_80px_-20px_rgb(0_0_0/0.8),0_0_0_1px_rgb(255_255_255/0.02)] backdrop:bg-ink-950/80 backdrop:backdrop-blur-md"
     >
-      <div className="space-y-5 p-5 sm:p-6">
+      <div className="space-y-5 p-6 sm:p-7">
         <div>
-          <h2 id="progress-heading" className="text-base font-medium text-zinc-50">{heading}</h2>
-          <p className="mt-0.5 truncate text-sm text-zinc-400" title={title}>{title}</p>
+          <h2 id="progress-heading" className="font-display text-xl font-semibold tracking-tight text-cream">{heading}</h2>
+          <p className="mt-0.5 truncate text-sm text-ink-400" title={title}>{title}</p>
         </div>
 
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-3 text-sm" aria-live="polite">
-            <span className="text-zinc-200">
+            <span className="text-ink-200">
               {stage && !done ? `Step ${current + 1} of ${stages.length}: ${stage.label}` : done ? "All steps finished" : "Preparing"}
             </span>
-            {fraction !== null && <span className="tabular-nums text-zinc-400">{Math.round(fraction * 100)}%</span>}
+            {fraction !== null && <span className="tabular-nums text-ink-400">{Math.round(fraction * 100)}%</span>}
           </div>
 
           <div
-            className="h-1.5 overflow-hidden rounded-full bg-zinc-800"
+            className="h-2 overflow-hidden rounded-full bg-ink-800"
             role="progressbar"
             aria-label={stage?.label ?? "Download progress"}
             aria-valuemin={0}
@@ -88,16 +88,16 @@ export function ProgressModal({ open, title, progress, busy, savedAs, error, onC
             aria-valuenow={fraction === null ? undefined : Math.round(fraction * 100)}
           >
             {fraction === null ? (
-              <div className="h-full w-1/3 rounded-full bg-teal-400 animate-[indeterminate_1.2s_ease-in-out_infinite] motion-reduce:animate-none" />
+              <div className="h-full w-1/3 rounded-full bg-ember animate-[indeterminate_1.2s_ease-in-out_infinite] motion-reduce:animate-none" />
             ) : (
               <div
-                className={`h-full rounded-full transition-[width] duration-200 ${failed ? "bg-red-400" : "bg-teal-400"}`}
+                className={`h-full rounded-full transition-[width] duration-200 ${failed ? "bg-rose-400" : "bg-ember"}`}
                 style={{ width: `${fraction * 100}%` }}
               />
             )}
           </div>
 
-          <p className="min-h-5 text-xs tabular-nums text-zinc-500">{detail}</p>
+          <p className="min-h-5 text-xs tabular-nums text-ink-500">{detail}</p>
         </div>
 
         {stages.length > 0 && (
@@ -107,7 +107,7 @@ export function ProgressModal({ open, title, progress, busy, savedAs, error, onC
               return (
                 <li key={s.id} className="flex items-center gap-3 text-sm">
                   <span className="flex h-4 w-4 items-center justify-center" aria-hidden="true">{icon[state]}</span>
-                  <span className={state === "pending" ? "text-zinc-600" : state === "error" ? "text-red-300" : "text-zinc-200"}>
+                  <span className={state === "pending" ? "text-ink-600" : state === "error" ? "text-rose-300" : "text-ink-200"}>
                     {s.label}
                   </span>
                 </li>
@@ -119,7 +119,7 @@ export function ProgressModal({ open, title, progress, busy, savedAs, error, onC
         {failed && <ErrorAlert message={error} />}
 
         {busy ? (
-          <p className="text-xs text-zinc-500">Keep this tab open. Long videos can take a few minutes.</p>
+          <p className="text-xs text-ink-500">Keep this tab open. Long videos can take a few minutes.</p>
         ) : (
           <div className="flex justify-end">
             <Button onClick={onClose} autoFocus>Close</Button>

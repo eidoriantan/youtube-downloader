@@ -15,7 +15,7 @@ const TEXT_FIELDS: { key: Exclude<keyof Mp3Metadata, "cover">; label: string; in
 ];
 
 const control =
-  "rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-teal-400/70 focus:ring-2 focus:ring-teal-400/20";
+  "rounded-xl border border-ink-800 bg-ink-950/80 px-3 py-2 text-sm text-cream outline-none transition hover:border-ink-700 focus:border-ember-400/70 focus:ring-4 focus:ring-ember-500/15";
 
 interface Mp3OptionsProps {
   enabled: boolean;
@@ -39,17 +39,17 @@ export function Mp3Options({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-zinc-300">
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-200">
           <input
             type="checkbox"
             checked={enabled}
             onChange={(e) => onEnabledChange(e.target.checked)}
-            className="h-4 w-4 accent-teal-400"
+            className="h-4 w-4 accent-ember-500"
           />
           Convert to MP3
         </label>
         {enabled && (
-          <label className="flex items-center gap-2 text-sm text-zinc-400">
+          <label className="flex items-center gap-2 text-sm text-ink-400">
             Bitrate
             <select
               value={bitrate}
@@ -65,9 +65,9 @@ export function Mp3Options({
       </div>
 
       {enabled && (
-        <fieldset className="space-y-4 rounded-lg border border-zinc-800 p-4">
-          <legend className="px-1 text-sm font-medium text-zinc-300">
-            MP3 metadata <span className="ml-1 font-normal text-zinc-500">Blank fields are left out</span>
+        <fieldset className="space-y-4 rounded-2xl border border-dashed border-ink-700 bg-ink-950/30 p-4 sm:p-5">
+          <legend className="px-1.5 text-sm font-medium text-ink-200">
+            MP3 metadata <span className="ml-1 font-normal text-ink-500">Blank fields are left out</span>
           </legend>
           <div className="grid gap-3 sm:grid-cols-2">
             {TEXT_FIELDS.map((f) => (
@@ -82,12 +82,12 @@ export function Mp3Options({
             ))}
           </div>
           <div>
-            <label htmlFor="mp3-cover" className="mb-1.5 block text-sm font-medium text-zinc-300">
+            <label htmlFor="mp3-cover" className="mb-1.5 block text-sm font-medium text-ink-200">
               Cover art
             </label>
             <div className="flex items-center gap-3">
               {coverUrl && (
-                <img src={coverUrl} alt="Cover art preview" className="h-14 w-14 shrink-0 rounded-md object-cover" />
+                <img src={coverUrl} alt="Cover art preview" className="h-14 w-14 shrink-0 rounded-lg object-cover ring-1 ring-ink-700" />
               )}
               <input
                 ref={coverInput}
@@ -95,7 +95,7 @@ export function Mp3Options({
                 type="file"
                 accept="image/jpeg,image/png"
                 onChange={(e) => set("cover", e.target.files?.[0] ?? null)}
-                className="min-w-0 flex-1 text-sm text-zinc-400 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-sm file:text-zinc-200 hover:file:bg-zinc-700"
+                className="min-w-0 flex-1 text-sm text-ink-400 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink-800 file:px-3.5 file:py-1.5 file:text-sm file:text-ink-200 hover:file:bg-ink-700"
               />
               {metadata.cover && (
                 <button
@@ -105,7 +105,7 @@ export function Mp3Options({
                     if (coverInput.current) coverInput.current.value = "";
                   }}
                   aria-label="Remove cover art"
-                  className="rounded-md p-1.5 text-zinc-500 transition hover:bg-zinc-800 hover:text-zinc-200"
+                  className="rounded-full p-1.5 text-ink-500 transition hover:bg-ink-800 hover:text-ink-200"
                 >
                   <X className="h-4 w-4" />
                 </button>

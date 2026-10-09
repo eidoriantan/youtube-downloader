@@ -13,8 +13,10 @@ import { ProgressModal } from "./components/ProgressModal";
 import { useDownloader } from "./hooks/useDownloader";
 import { useEngine } from "./hooks/useEngine";
 import { hasVideo } from "./lib/format";
+import hero from "./assets/hero.svg";
 
-const link = "text-teal-300 underline decoration-teal-300/40 underline-offset-2 hover:decoration-teal-300";
+const link = "text-ember-300 underline decoration-ember-300/40 underline-offset-2 hover:decoration-ember-300";
+const STACK = ["yt-dlp", "Pyodide", "ffmpeg.wasm"];
 const now = new Date();
 
 export default function App() {
@@ -24,25 +26,47 @@ export default function App() {
   const selected = d.info?.formats.find((f) => f.format_id === d.formatId);
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-200 antialiased">
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-14 sm:py-20">
-        <header className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-[400px]">
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl">
-              Media Downloader
-            </h1>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-zinc-400">
-              yt-dlp runs in Pyodide and ffmpeg.wasm merges streams, all inside your browser.
-              Only a small CORS proxy sits in between.
-            </p>
+    <div className="relative isolate flex min-h-screen flex-col overflow-x-clip bg-ink-950 font-sans text-ink-200 antialiased">
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -top-40 left-1/2 h-[36rem] w-[36rem] -translate-x-[70%] rounded-full bg-ember-500/15 blur-[120px]" />
+        <div className="absolute top-1/3 right-0 h-[28rem] w-[28rem] translate-x-1/3 rounded-full bg-iris/10 blur-[120px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgb(255_255_255/0.035)_1px,transparent_1px)] [background-size:24px_24px] [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
+      </div>
+
+      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-10 px-4 py-10 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14 lg:py-20">
+        <header className="lg:sticky lg:top-12 lg:self-start">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img src="/favicon.svg" alt="" className="h-10 w-10 rounded-xl shadow-[0_8px_24px_-6px_rgb(255_106_69/0.6)]" />
+              <span className="font-mono text-xs uppercase tracking-[0.2em] text-ink-400">ytdl</span>
+            </div>
+            <GithubLink />
           </div>
-          <GithubLink />
+
+          <h1 className="mt-8 max-w-[400px] font-display text-4xl font-bold leading-[1.05] tracking-tight text-cream sm:text-5xl">
+            Media{" "}
+            <span className="bg-ember bg-clip-text text-transparent">Downloader</span>
+          </h1>
+          <p className="mt-4 max-w-md text-[15px] leading-relaxed text-ink-400">
+            yt-dlp runs in Pyodide and ffmpeg.wasm merges streams, all inside your browser.
+            Only a small CORS proxy sits in between.
+          </p>
+
+          <ul className="mt-5 flex flex-wrap gap-2" aria-label="Built with">
+            {STACK.map((t) => (
+              <li key={t} className="rounded-full border border-ink-800 bg-ink-900/60 px-3 py-1 font-mono text-xs text-ink-300">
+                {t}
+              </li>
+            ))}
+          </ul>
+
+          <img src={hero} alt="" className="mt-10 hidden w-full max-w-md select-none lg:block" draggable={false} />
         </header>
 
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <EngineStatus steps={engine.steps} ready={engine.ready} error={engine.error} onRetry={engine.retry} />
 
-          <Panel className="space-y-4">
+          <Panel step="01" label="Source" className="space-y-5">
             <Field
               label="Proxy URL"
               value={d.proxy}
@@ -77,10 +101,10 @@ export default function App() {
           </Panel>
 
           {d.info && (
-            <Panel className="space-y-5">
+            <Panel step="02" label="Format" className="space-y-6">
               <div>
-                <p className="text-xs text-zinc-500">Ready to download</p>
-                <h2 className="mt-0.5 text-lg font-medium text-zinc-50">{d.info.title}</h2>
+                <p className="text-xs text-ink-500">Ready to download</p>
+                <h2 className="mt-1 font-display text-xl font-semibold leading-snug tracking-tight text-cream">{d.info.title}</h2>
               </div>
               <FormatPicker formats={d.info.formats} value={d.formatId} onChange={d.setFormatId} />
               {selected && !hasVideo(selected) && (
@@ -102,8 +126,8 @@ export default function App() {
 
           <div aria-live="polite" className="space-y-3">
             {d.status && (
-              <p className="flex items-center gap-2 text-sm text-zinc-400">
-                {d.busy && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-teal-400" />}
+              <p className="flex items-center gap-2 px-1 text-sm text-ink-400">
+                {d.busy && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ember-400" />}
                 {d.status}
               </p>
             )}
@@ -122,7 +146,7 @@ export default function App() {
         onClose={d.closeProgress}
       />
 
-      <footer className="border-t border-zinc-900 px-4 py-6 text-center text-xs text-zinc-600">
+      <footer className="border-t border-ink-900 px-4 py-6 text-center font-mono text-xs text-ink-600">
         © {year} eidoriantan
       </footer>
     </div>

@@ -1,5 +1,53 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Night-violet neutrals. */
+  --color-ink-950: #0c0a14;
+  --color-ink-900: #14111f;
+  --color-ink-850: #1b1729;
+  --color-ink-800: #262036;
+  --color-ink-700: #3a3150;
+  --color-ink-600: #554a6e;
+  --color-ink-500: #7a7091;
+  --color-ink-400: #a198b5;
+  --color-ink-300: #c9c2d8;
+  --color-ink-200: #e4dfec;
+  --color-cream: #fbf6ee;
+
+  /* Ember accent, coral into amber. */
+  --color-ember-200: #ffd2c2;
+  --color-ember-300: #ffad92;
+  --color-ember-400: #ff8a65;
+  --color-ember-500: #ff6a45;
+  --color-ember-600: #e9502c;
+  --color-amber-glow: #ffb547;
+  --color-iris: #a78bfa;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-ink-950);
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-ember-500) 40%, transparent);
+    color: var(--color-cream);
+  }
+}
+
+/* Primary call to action: a warm gradient that brightens on hover. */
+@utility bg-ember {
+  background-image: linear-gradient(135deg, var(--color-ember-500), var(--color-amber-glow));
+}
+
 /* Sliding bar for progress that can't be measured. */
 @keyframes indeterminate {
   from { transform: translateX(-100%); }
