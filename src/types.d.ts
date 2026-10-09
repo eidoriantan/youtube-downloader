@@ -86,8 +86,32 @@ export interface DownloadOptions {
   format: MediaFormat;
   /** Convert an audio-only download to a tagged MP3. */
   mp3?: Mp3Options | null;
-  onStatus: StatusHandler;
+  onProgress: ProgressHandler;
 }
+
+/** Stages a download can go through; only the ones that apply are shown. */
+export type DownloadStageId = "video" | "audio" | "merge" | "mp3" | "tags" | "save";
+
+export interface DownloadStage {
+  id: DownloadStageId;
+  label: string;
+}
+
+/** Snapshot of a running download, shown in the progress modal. */
+export interface DownloadProgress {
+  stages: DownloadStage[];
+  /** Index of the running stage in `stages`. */
+  current: number;
+  /** 0–1 for the running stage, or null when it can't be measured. */
+  fraction: number | null;
+  /** Human-readable description of what is happening right now. */
+  detail: string;
+}
+
+export type ProgressHandler = (progress: DownloadProgress) => void;
+
+/** Bytes fetched so far for the `index`-th requested format; `total` is 0 if unknown. */
+export type FileProgressHandler = (index: number, downloaded: number, total: number) => void;
 
 /** Steps shown on the loading screen, in the order they run. */
 export type LoadStepId = "runtime" | "packages" | "ytdlp" | "ffmpeg";
@@ -130,5 +154,6 @@ export type PyResponse =
   | { type: "step"; step: LoadStepId; state: LoadStepState }
   | { type: "ready" }
   | { type: "initError"; message: string }
+  | { type: "progress"; id: number; index: number; downloaded: number; total: number }
   | { type: "result"; id: number; value: unknown }
   | { type: "error"; id: number; message: string };

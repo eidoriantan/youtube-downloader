@@ -3,7 +3,7 @@ import { downloadMedia, listFormats } from "../lib/engine";
 import { friendlyError } from "../lib/errors";
 import { hasVideo, pickDefaultFormat } from "../lib/format";
 import { syncProxy } from "../lib/pyodide";
-import type { MediaInfo, Mp3Bitrate, Mp3Metadata } from "../types";
+import type { DownloadProgress, MediaInfo, Mp3Bitrate, Mp3Metadata } from "../types";
 
 // Shared default proxy. It is rate-limited; the UI tells users to deploy their own.
 const DEFAULT_PROXY = "https://cf-proxy.eidoriantan.com/";
@@ -32,6 +32,10 @@ export function useDownloader() {
   const [toMp3, setToMp3] = useState(false);
   const [bitrate, setBitrate] = useState<Mp3Bitrate>(320);
   const [metadata, setMetadata] = useState<Mp3Metadata>(EMPTY_METADATA);
+  // The progress modal stays open after a download until the user closes it.
+  const [progressOpen, setProgressOpen] = useState(false);
+  const [progress, setProgress] = useState<DownloadProgress | null>(null);
+  const [savedAs, setSavedAs] = useState("");
 
   // Keep the Python side and localStorage in step with the input as it changes.
   useEffect(() => {
@@ -72,7 +76,12 @@ export function useDownloader() {
       const format = info?.formats.find((f) => f.format_id === formatId);
       if (!info || !format) throw new Error("Choose a format first.");
       const mp3 = toMp3 && !hasVideo(format) ? { bitrate, metadata } : null;
-      const name = await downloadMedia({ proxy, url, info, format, mp3, onStatus: setStatus });
+      setProgress(null);
+      setSavedAs("");
+      setStatus("");
+      setProgressOpen(true);
+      const name = await downloadMedia({ proxy, url, info, format, mp3, onProgress: setProgress });
+      setSavedAs(name);
       setStatus(`Saved ${name}`);
     });
 
@@ -80,5 +89,6 @@ export function useDownloader() {
     proxy, setProxy, url, setUrl, info, formatId, setFormatId,
     status, error, busy, fetchFormats, download,
     toMp3, setToMp3, bitrate, setBitrate, metadata, setMetadata,
+    progressOpen, progress, savedAs, closeProgress: () => setProgressOpen(false),
   };
 }

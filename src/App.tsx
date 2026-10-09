@@ -9,6 +9,7 @@ import { GithubLink } from "./components/GithubLink";
 import { Mp3Options } from "./components/Mp3Options";
 import { Notice } from "./components/Notice";
 import { Panel } from "./components/Panel";
+import { ProgressModal } from "./components/ProgressModal";
 import { useDownloader } from "./hooks/useDownloader";
 import { useEngine } from "./hooks/useEngine";
 import { hasVideo } from "./lib/format";
@@ -110,6 +111,16 @@ export default function App() {
           </div>
         </div>
       </main>
+
+      <ProgressModal
+        open={d.progressOpen}
+        title={d.info?.title ?? ""}
+        progress={d.progress}
+        busy={d.busy}
+        savedAs={d.savedAs}
+        error={d.error}
+        onClose={d.closeProgress}
+      />
 
       <footer className="border-t border-zinc-900 px-4 py-6 text-center text-xs text-zinc-600">
         © {year} eidoriantan

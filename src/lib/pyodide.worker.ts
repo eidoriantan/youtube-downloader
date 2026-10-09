@@ -9,6 +9,8 @@ import type { DownloadedFile, LoadStepId, LoadStepState, PyCall, PyRequest, PyRe
 
 const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.mjs";
 const DL_DIR = "/mnt/dl";
+// yt-dlp's hook fires on every block it reads; this is plenty for a progress bar.
+const PROGRESS_INTERVAL_MS = 100;
 
 let currentProxy = "";
 let pyInstance: PyodideInterface | null = null;
@@ -66,10 +68,18 @@ async function listFormats(url: string): Promise<string> {
   return (await pyodide.runPythonAsync(listPy)) as string;
 }
 
-async function download(url: string, formatIds: string[]): Promise<DownloadedFile[]> {
+async function download(id: number, url: string, formatIds: string[]): Promise<DownloadedFile[]> {
   const pyodide = await initPyodide();
+  let last = 0;
+  const reportProgress = (index: number, downloaded: number, total: number, finished: boolean) => {
+    const now = performance.now();
+    if (!finished && now - last < PROGRESS_INTERVAL_MS) return;
+    last = now;
+    send({ type: "progress", id, index, downloaded, total });
+  };
   pyodide.globals.set("TARGET_URL", url);
   pyodide.globals.set("FORMAT_IDS", pyodide.toPy(formatIds));
+  pyodide.globals.set("REPORT_PROGRESS", reportProgress);
   await pyodide.runPythonAsync(downloadPy);
 
   return pyodide.FS.readdir(DL_DIR)
@@ -86,7 +96,7 @@ async function handleCall(req: PyCall & { id: number }): Promise<void> {
     if (req.type === "listFormats") {
       send({ type: "result", id: req.id, value: await listFormats(req.url) });
     } else {
-      const files = await download(req.url, req.formatIds);
+      const files = await download(req.id, req.url, req.formatIds);
       // Transfer the bytes instead of copying them; downloads can be large.
       send({ type: "result", id: req.id, value: files }, files.map((f) => f.data.buffer as ArrayBuffer));
     }

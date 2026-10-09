@@ -1,8 +1,9 @@
-import type { DownloadedFile, PyCall, PyRequest, PyResponse, StepReporter } from "../types";
+import type { DownloadedFile, FileProgressHandler, PyCall, PyRequest, PyResponse, StepReporter } from "../types";
 
 interface Pending {
   resolve: (value: unknown) => void;
   reject: (reason: Error) => void;
+  onProgress?: FileProgressHandler;
 }
 
 let worker: Worker | null = null;
@@ -61,6 +62,9 @@ export function initPyodide(report: StepReporter = () => {}): Promise<void> {
           case "initError":
             reject(new Error(msg.message));
             break;
+          case "progress":
+            pending.get(msg.id)?.onProgress?.(msg.index, msg.downloaded, msg.total);
+            break;
           case "result":
           case "error": {
             const p = pending.get(msg.id);
@@ -85,11 +89,11 @@ export function initPyodide(report: StepReporter = () => {}): Promise<void> {
   return pyPromise;
 }
 
-async function call<T>(req: PyCall): Promise<T> {
+async function call<T>(req: PyCall, onProgress?: FileProgressHandler): Promise<T> {
   await initPyodide();
   const id = ++nextId;
   return new Promise<T>((resolve, reject) => {
-    pending.set(id, { resolve: resolve as (value: unknown) => void, reject });
+    pending.set(id, { resolve: resolve as (value: unknown) => void, reject, onProgress });
     post({ ...req, id });
   });
 }
@@ -98,5 +102,5 @@ async function call<T>(req: PyCall): Promise<T> {
 export const runListFormats = (url: string) => call<string>({ type: "listFormats", url });
 
 /** Downloads each format to its own file; see `download.py` for naming. */
-export const runDownload = (url: string, formatIds: string[]) =>
-  call<DownloadedFile[]>({ type: "download", url, formatIds });
+export const runDownload = (url: string, formatIds: string[], onProgress?: FileProgressHandler) =>
+  call<DownloadedFile[]>({ type: "download", url, formatIds }, onProgress);

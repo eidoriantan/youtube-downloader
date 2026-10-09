@@ -6,9 +6,11 @@ export const hasAudio = (f: MediaFormat): boolean => !!f.acodec && f.acodec !== 
 export const formatKind = (f: MediaFormat): FormatKind =>
   hasVideo(f) && hasAudio(f) ? "muxed" : hasVideo(f) ? "video" : "audio";
 
+export const fmtBytes = (bytes: number): string => `${(bytes / 1048576).toFixed(1)} MB`;
+
 export function fmtSize(f: MediaFormat): string {
   const bytes = f.filesize || f.filesize_approx;
-  return bytes ? `${(bytes / 1048576).toFixed(1)} MB` : "size unknown";
+  return bytes ? fmtBytes(bytes) : "size unknown";
 }
 
 /** Short quality string, e.g. "1080p 60fps" or "128 kbps". */

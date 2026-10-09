@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* Sliding bar for progress that can't be measured. */
+@keyframes indeterminate {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
