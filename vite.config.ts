@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       Sitemap({
         hostname,
+        changefreq: 'monthly',
+        priority: 1.0,
         generateRobotsTxt: true,
       })
     ],

@@ -4,13 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0c0a14" />
-  <meta name="description" content="Download YouTube video and audio entirely in your browser with yt-dlp, Pyodide and ffmpeg.wasm." />
+  <meta name="description" content="Free, ad-free YouTube downloader that runs entirely in your browser. Save videos in any quality or convert audio to MP3 with ID3 tags, powered by yt-dlp and ffmpeg.wasm." />
+  <meta name="keywords" content="youtube downloader, youtube to mp3, download youtube video, yt-dlp, ffmpeg.wasm, pyodide, open source" />
+  <meta name="author" content="Adriane Justine Tan" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <link rel="canonical" href="%VITE_SITE_URL%/" />
 
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Media Downloader" />
-  <meta property="og:description" content="yt-dlp and ffmpeg.wasm, running entirely inside your browser." />
+  <meta property="og:site_name" content="Media Downloader" />
+  <meta property="og:url" content="%VITE_SITE_URL%/" />
+  <meta property="og:title" content="YouTube Downloader: video and MP3, right in your browser" />
+  <meta property="og:description" content="yt-dlp and ffmpeg.wasm running entirely inside your browser. Free, open source and ad-free." />
   <meta property="og:image" content="%VITE_SITE_URL%/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Media Downloader: yt-dlp, Pyodide and ffmpeg.wasm, all inside your browser" />
+  <meta property="og:locale" content="en_US" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="YouTube Downloader: video and MP3, right in your browser" />
+  <meta name="twitter:description" content="yt-dlp and ffmpeg.wasm running entirely inside your browser. Free, open source and ad-free." />
+  <meta name="twitter:image" content="%VITE_SITE_URL%/og-image.png" />
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Media Downloader",
+      "alternateName": "YouTube Downloader",
+      "url": "%VITE_SITE_URL%/",
+      "image": "%VITE_SITE_URL%/og-image.png",
+      "description": "Download YouTube video and audio entirely in your browser, with optional MP3 conversion and ID3 tags.",
+      "applicationCategory": "MultimediaApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript and WebAssembly",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": { "@type": "Person", "name": "Adriane Justine Tan", "url": "https://eidoriantan.com" },
+      "codeRepository": "https://github.com/eidoriantan/youtube-downloader",
+      "license": "https://opensource.org/licenses/MIT"
+    }
+  </script>
 
   <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -26,11 +59,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" />
 
-  <title>YouTube Downloader</title>
+  <title>YouTube Downloader: Save Video and MP3 in Your Browser</title>
 </head>
 
 <body>
   <div id="root"></div>
+  <noscript>
+    <h1>YouTube Downloader</h1>
+    <p>Download YouTube video and audio, or convert to MP3, entirely in your browser with yt-dlp and ffmpeg.wasm. Please enable JavaScript to use it.</p>
+  </noscript>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
