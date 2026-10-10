@@ -147,7 +147,9 @@ export default function App() {
       />
 
       <footer className="border-t border-ink-900 px-4 py-6 text-center font-mono text-xs text-ink-600">
-        © {year} eidoriantan
+        © {year} <a href="https://eidoriantan.com" className="text-ink-500 hover:text-ink-400">
+          eidoriantan
+        </a>
       </footer>
     </div>
   );
