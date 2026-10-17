@@ -1,4 +1,5 @@
-import { Download, Search } from "lucide-react";
+import { ArrowLeft, Download, Search } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import { Button } from "./components/Button";
 import { EngineStatus } from "./components/EngineStatus";
@@ -12,8 +13,9 @@ import { Panel } from "./components/Panel";
 import { ProgressModal } from "./components/ProgressModal";
 import { useDownloader } from "./hooks/useDownloader";
 import { useEngine } from "./hooks/useEngine";
-import { hasVideo } from "./lib/format";
+import { fmtQuality, outputExt } from "./lib/format";
 import hero from "./assets/hero.svg";
+import type { MediaFormat } from "./types";
 
 const link = "text-ember-300 underline decoration-ember-300/40 underline-offset-2 hover:decoration-ember-300";
 const STACK = ["yt-dlp", "Pyodide", "ffmpeg.wasm"];
@@ -23,7 +25,18 @@ export default function App() {
   const d = useDownloader();
   const engine = useEngine();
   const year = now.getFullYear();
-  const selected = d.info?.formats.find((f) => f.format_id === d.formatId);
+  const video = d.info?.formats.find((f) => f.format_id === d.videoId) ?? null;
+  const audio = d.info?.formats.find((f) => f.format_id === d.audioId) ?? null;
+  const toMp3 = d.toMp3 && !video;
+  const onFormatStep = d.step === "format" && !!d.info;
+
+  // Move focus to the card that just swapped in, so keyboard and screen reader users follow along.
+  const stepRef = useRef<HTMLDivElement>(null);
+  const firstStep = useRef(true);
+  useEffect(() => {
+    if (firstStep.current) firstStep.current = false;
+    else stepRef.current?.focus({ preventScroll: true });
+  }, [onFormatStep]);
 
   return (
     <div className="relative isolate flex min-h-screen flex-col overflow-x-clip bg-ink-950 font-sans text-ink-200 antialiased">
@@ -66,63 +79,106 @@ export default function App() {
         <div className="min-w-0 space-y-5">
           <EngineStatus steps={engine.steps} ready={engine.ready} error={engine.error} onRetry={engine.retry} />
 
-          <Panel step="01" label="Source" className="space-y-5">
-            <Field
-              label="Proxy URL"
-              value={d.proxy}
-              onChange={(e) => d.setProxy(e.target.value)}
-              placeholder="https://cf-proxy.eidoriantan.com"
-              hint="Applied immediately and saved in this browser."
-            />
-            <div className="space-y-2">
-              <Notice>
-                The proxy is a deploy of{" "}
-                <a href="https://github.com/eidoriantan/cf-proxy" target="_blank" rel="noopener noreferrer" className={link}>
-                  cf-proxy
-                </a>{" "}
-                on Cloudflare. It only forwards requests so your browser can reach YouTube.
-              </Notice>
-              <Notice tone="warn">
-                The default proxy is shared and rate-limited, so it may sometimes fail. If that happens,
-                try again later or deploy your own cf-proxy and paste its URL above.
-              </Notice>
-            </div>
-            <Field
-              label="Video URL"
-              value={d.url}
-              onChange={(e) => d.setUrl(e.target.value)}
-              placeholder="https://www.youtube.com/watch?v=…"
-              onKeyDown={(e) => e.key === "Enter" && d.url && d.proxy && !d.busy && d.fetchFormats()}
-            />
-            <Button onClick={d.fetchFormats} disabled={!d.url || !d.proxy} loading={d.busy && !d.info}
-              icon={<Search className="h-4 w-4" />}>
-              {d.busy && !d.info ? "Working…" : "Get formats"}
-            </Button>
-          </Panel>
-
-          {d.info && (
-            <Panel step="02" label="Format" className="space-y-6">
-              <div>
-                <p className="text-xs text-ink-500">Ready to download</p>
-                <h2 className="mt-1 font-display text-xl font-semibold leading-snug tracking-tight text-cream">{d.info.title}</h2>
-              </div>
-              <FormatPicker formats={d.info.formats} value={d.formatId} onChange={d.setFormatId} />
-              {selected && !hasVideo(selected) && (
-                <Mp3Options
-                  enabled={d.toMp3}
-                  onEnabledChange={d.setToMp3}
-                  bitrate={d.bitrate}
-                  onBitrateChange={d.setBitrate}
-                  metadata={d.metadata}
-                  onMetadataChange={d.setMetadata}
+          <div ref={stepRef} tabIndex={-1} className="outline-none">
+            {onFormatStep && d.info ? (
+              <Panel step="02" label="Format" className="space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+                  <button
+                    type="button"
+                    onClick={d.backToSource}
+                    disabled={d.busy}
+                    className="-ml-1 inline-flex items-center gap-1.5 rounded-full px-1 py-0.5 text-sm text-ink-400 transition hover:text-cream focus-visible:outline focus-visible:outline-2 focus-visible:outline-ember-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                    Change URL
+                  </button>
+                  <div className="w-full sm:w-auto sm:min-w-72">
+                    <Field
+                      compact
+                      label="Proxy"
+                      value={d.proxy}
+                      onChange={(e) => d.setProxy(e.target.value)}
+                      placeholder="https://cf-proxy.eidoriantan.com"
+                    />
+                  </div>
+                </div>
+                <h2 className="font-display text-xl font-semibold leading-snug tracking-tight text-cream line-clamp-2" title={d.info.title}>
+                  {d.info.title}
+                </h2>
+                <FormatPicker
+                  formats={d.info.formats}
+                  videoId={d.videoId}
+                  audioId={d.audioId}
+                  onVideoChange={d.setVideoId}
+                  onAudioChange={d.setAudioId}
                 />
-              )}
-              <Button onClick={d.download} disabled={!d.formatId} loading={d.busy}
-                icon={<Download className="h-4 w-4" />}>
-                {d.busy ? "Working…" : "Download"}
-              </Button>
-            </Panel>
-          )}
+                {audio && !video && (
+                  <Mp3Options
+                    enabled={d.toMp3}
+                    onEnabledChange={d.setToMp3}
+                    bitrate={d.bitrate}
+                    onBitrateChange={d.setBitrate}
+                    metadata={d.metadata}
+                    onMetadataChange={d.setMetadata}
+                  />
+                )}
+                <div className="flex flex-col gap-4 border-t border-ink-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="min-w-0 text-sm text-ink-400">
+                    {video || audio ? (
+                      <>
+                        <span className="text-ink-500">Will save </span>
+                        <span className="text-ink-200">
+                          {[video, audio].filter((f): f is MediaFormat => !!f).map((f) => `${fmtQuality(f)} ${f.ext}`).join(" + ")}
+                        </span>
+                        {video && !audio && <span className="text-ink-500"> (no sound)</span>}
+                        <span className="font-mono text-ember-300"> → .{outputExt(video, audio, toMp3)}</span>
+                      </>
+                    ) : (
+                      "Choose a video, an audio track, or both."
+                    )}
+                  </p>
+                  <Button onClick={d.download} disabled={!video && !audio} loading={d.busy}
+                    icon={<Download className="h-4 w-4" />} className="shrink-0">
+                    {d.busy ? "Working…" : "Download"}
+                  </Button>
+                </div>
+              </Panel>
+            ) : (
+              <Panel step="01" label="Source" className="space-y-5">
+                <Field
+                  label="Proxy URL"
+                  value={d.proxy}
+                  onChange={(e) => d.setProxy(e.target.value)}
+                  placeholder="https://cf-proxy.eidoriantan.com"
+                  hint="Applied immediately and saved in this browser."
+                />
+                <div className="space-y-2">
+                  <Notice>
+                    The proxy is a deploy of{" "}
+                    <a href="https://github.com/eidoriantan/cf-proxy" target="_blank" rel="noopener noreferrer" className={link}>
+                      cf-proxy
+                    </a>{" "}
+                    on Cloudflare. It only forwards requests so your browser can reach YouTube.
+                  </Notice>
+                  <Notice tone="warn">
+                    The default proxy is shared and rate-limited, so it may sometimes fail. If that happens,
+                    try again later or deploy your own cf-proxy and paste its URL above.
+                  </Notice>
+                </div>
+                <Field
+                  label="Video URL"
+                  value={d.url}
+                  onChange={(e) => d.setUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=…"
+                  onKeyDown={(e) => e.key === "Enter" && d.url && d.proxy && !d.busy && d.fetchFormats()}
+                />
+                <Button onClick={d.fetchFormats} disabled={!d.url || !d.proxy} loading={d.busy}
+                  icon={<Search className="h-4 w-4" />}>
+                  {d.busy ? "Working…" : "Get formats"}
+                </Button>
+              </Panel>
+            )}
+          </div>
 
           <div aria-live="polite" className="space-y-3">
             {d.status && (

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { downloadMedia, listFormats } from "../lib/engine";
 import { friendlyError } from "../lib/errors";
-import { hasVideo, pickDefaultFormat } from "../lib/format";
+import { pickAudio, pickVideo } from "../lib/format";
 import { syncProxy } from "../lib/pyodide";
 import type { DownloadProgress, MediaInfo, Mp3Bitrate, Mp3Metadata } from "../types";
 
@@ -12,6 +12,9 @@ const PROXY_KEY = "proxy";
 const EMPTY_METADATA: Mp3Metadata = {
   title: "", artist: "", album: "", year: "", genre: "", track: "", cover: null,
 };
+
+/** Which card is showing; one step at a time so the page never grows past the fold. */
+export type Step = "source" | "format";
 
 function loadProxy(): string {
   try {
@@ -25,7 +28,10 @@ export function useDownloader() {
   const [proxy, setProxy] = useState<string>(loadProxy);
   const [url, setUrl] = useState("");
   const [info, setInfo] = useState<MediaInfo | null>(null);
-  const [formatId, setFormatId] = useState("");
+  const [step, setStep] = useState<Step>("source");
+  // Empty string means "none": a missing video gives an audio file, a missing audio a silent video.
+  const [videoId, setVideoId] = useState("");
+  const [audioId, setAudioId] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,6 +53,20 @@ export function useDownloader() {
     }
   }, [proxy]);
 
+  // Browser Back/Forward move between steps; the format step is pushed as its own entry.
+  useEffect(() => {
+    // A reload loses the fetched formats, so drop a leftover "format" entry state.
+    if (history.state?.step) history.replaceState(null, "");
+    const onPop = (e: PopStateEvent) => setStep(e.state?.step === "format" ? "format" : "source");
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const backToSource = () => {
+    if (history.state?.step === "format") history.back();
+    else setStep("source");
+  };
+
   const run = useCallback(async (fn: () => Promise<void>) => {
     setBusy(true);
     setError("");
@@ -67,26 +87,36 @@ export function useDownloader() {
       setMetadata(EMPTY_METADATA);
       const data = await listFormats(proxy, url, setStatus);
       setInfo(data);
-      setFormatId(pickDefaultFormat(data.formats)?.format_id ?? "");
+      const video = pickVideo(data.formats);
+      setVideoId(video?.format_id ?? "");
+      setAudioId(pickAudio(data.formats, video)?.format_id ?? "");
       setStatus(`Found ${data.formats.length} formats`);
+      setStep("format");
+      history.pushState({ step: "format" }, "");
     });
 
   const download = () =>
     run(async () => {
-      const format = info?.formats.find((f) => f.format_id === formatId);
+      const video = info?.formats.find((f) => f.format_id === videoId) ?? null;
+      const audio = info?.formats.find((f) => f.format_id === audioId) ?? null;
+      const format = video ?? audio;
       if (!info || !format) throw new Error("Choose a format first.");
-      const mp3 = toMp3 && !hasVideo(format) ? { bitrate, metadata } : null;
+      const mp3 = toMp3 && !video ? { bitrate, metadata } : null;
       setProgress(null);
       setSavedAs("");
       setStatus("");
       setProgressOpen(true);
-      const name = await downloadMedia({ proxy, url, info, format, mp3, onProgress: setProgress });
+      // With a video picked, its audio choice is explicit: null means a silent video.
+      const name = await downloadMedia({
+        proxy, url, info, format, audio: video ? audio : undefined, mp3, onProgress: setProgress,
+      });
       setSavedAs(name);
       setStatus(`Saved ${name}`);
     });
 
   return {
-    proxy, setProxy, url, setUrl, info, formatId, setFormatId,
+    proxy, setProxy, url, setUrl, info, step, backToSource,
+    videoId, setVideoId, audioId, setAudioId,
     status, error, busy, fetchFormats, download,
     toMp3, setToMp3, bitrate, setBitrate, metadata, setMetadata,
     progressOpen, progress, savedAs, closeProgress: () => setProgressOpen(false),

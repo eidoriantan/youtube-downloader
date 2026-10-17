@@ -1,5 +1,6 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL } from "@ffmpeg/util";
+import { mergedExt } from "./format";
 import type { DownloadedStream, MergedMedia, Mp3Bitrate, StepReporter } from "../types";
 
 type FractionHandler = (fraction: number) => void;
@@ -44,12 +45,6 @@ async function exec(ff: FFmpeg, args: string[], onProgress?: FractionHandler): P
   }
 }
 
-function pickContainer(video: string, audio: string): MergedMedia["ext"] {
-  if (video === "mp4" && audio === "m4a") return "mp4";
-  if (video === "webm" && audio === "webm") return "webm";
-  return "mkv";
-}
-
 /** Stream-copies a video and an audio file into one container. */
 export async function mergeStreams(args: {
   primary: DownloadedStream;
@@ -57,7 +52,7 @@ export async function mergeStreams(args: {
   onProgress?: FractionHandler;
 }): Promise<MergedMedia> {
   const { primary, audio, onProgress } = args;
-  const ext = pickContainer(primary.ext, audio.ext);
+  const ext = mergedExt(primary.ext, audio.ext);
   const vIn = `v.${primary.ext}`;
   const aIn = `a.${audio.ext}`;
   const out = `out.${ext}`;

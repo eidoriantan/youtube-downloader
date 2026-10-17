@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { Field } from "./Field";
 import type { Mp3Bitrate, Mp3Metadata } from "../types";
 
@@ -65,54 +65,57 @@ export function Mp3Options({
       </div>
 
       {enabled && (
-        <fieldset className="space-y-4 rounded-2xl border border-dashed border-ink-700 bg-ink-950/30 p-4 sm:p-5">
-          <legend className="px-1.5 text-sm font-medium text-ink-200">
-            MP3 metadata <span className="ml-1 font-normal text-ink-500">Blank fields are left out</span>
-          </legend>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {TEXT_FIELDS.map((f) => (
-              <Field
-                key={f.key}
-                id={`mp3-${f.key}`}
-                label={f.label}
-                inputMode={f.inputMode}
-                value={metadata[f.key]}
-                onChange={(e) => set(f.key, e.target.value)}
-              />
-            ))}
-          </div>
-          <div>
-            <label htmlFor="mp3-cover" className="mb-1.5 block text-sm font-medium text-ink-200">
-              Cover art
-            </label>
-            <div className="flex items-center gap-3">
-              {coverUrl && (
-                <img src={coverUrl} alt="Cover art preview" className="h-14 w-14 shrink-0 rounded-lg object-cover ring-1 ring-ink-700" />
-              )}
-              <input
-                ref={coverInput}
-                id="mp3-cover"
-                type="file"
-                accept="image/jpeg,image/png"
-                onChange={(e) => set("cover", e.target.files?.[0] ?? null)}
-                className="min-w-0 flex-1 text-sm text-ink-400 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink-800 file:px-3.5 file:py-1.5 file:text-sm file:text-ink-200 hover:file:bg-ink-700"
-              />
-              {metadata.cover && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    set("cover", null);
-                    if (coverInput.current) coverInput.current.value = "";
-                  }}
-                  aria-label="Remove cover art"
-                  className="rounded-full p-1.5 text-ink-500 transition hover:bg-ink-800 hover:text-ink-200"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+        <details className="group rounded-2xl border border-dashed border-ink-700 bg-ink-950/30">
+          <summary className="flex cursor-pointer list-none items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium text-ink-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ember-300 sm:px-5 [&::-webkit-details-marker]:hidden">
+            <ChevronRight className="h-4 w-4 text-ink-500 transition group-open:rotate-90" aria-hidden="true" />
+            MP3 metadata <span className="font-normal text-ink-500">Optional, blank fields are left out</span>
+          </summary>
+          <div className="space-y-4 px-4 pb-4 sm:px-5 sm:pb-5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {TEXT_FIELDS.map((f) => (
+                <Field
+                  key={f.key}
+                  id={`mp3-${f.key}`}
+                  label={f.label}
+                  inputMode={f.inputMode}
+                  value={metadata[f.key]}
+                  onChange={(e) => set(f.key, e.target.value)}
+                />
+              ))}
+            </div>
+            <div>
+              <label htmlFor="mp3-cover" className="mb-1.5 block text-sm font-medium text-ink-200">
+                Cover art
+              </label>
+              <div className="flex items-center gap-3">
+                {coverUrl && (
+                  <img src={coverUrl} alt="Cover art preview" className="h-14 w-14 shrink-0 rounded-lg object-cover ring-1 ring-ink-700" />
+                )}
+                <input
+                  ref={coverInput}
+                  id="mp3-cover"
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={(e) => set("cover", e.target.files?.[0] ?? null)}
+                  className="min-w-0 flex-1 text-sm text-ink-400 file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-ink-800 file:px-3.5 file:py-1.5 file:text-sm file:text-ink-200 hover:file:bg-ink-700"
+                />
+                {metadata.cover && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      set("cover", null);
+                      if (coverInput.current) coverInput.current.value = "";
+                    }}
+                    aria-label="Remove cover art"
+                    className="rounded-full p-1.5 text-ink-500 transition hover:bg-ink-800 hover:text-ink-200"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </fieldset>
+        </details>
       )}
     </div>
   );

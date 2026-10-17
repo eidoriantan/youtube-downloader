@@ -50,14 +50,16 @@ describe("proxy", () => {
 });
 
 describe("fetchFormats", () => {
-  it("loads formats and preselects the best muxed format", async () => {
+  it("loads formats, preselects the best video and its matching audio, and moves to the format step", async () => {
     const { result } = renderHook(() => useDownloader());
     act(() => result.current.setUrl("https://youtu.be/jNQXAC9IVRw"));
     await act(() => result.current.fetchFormats());
 
     expect(mocks.listFormats).toHaveBeenCalledWith(DEFAULT_PROXY, "https://youtu.be/jNQXAC9IVRw", expect.any(Function));
     expect(result.current.info).toBe(INFO);
-    expect(result.current.formatId).toBe("18");
+    expect(result.current.videoId).toBe("137");
+    expect(result.current.audioId).toBe("140");
+    expect(result.current.step).toBe("format");
     expect(result.current.status).toBe(`Found ${INFO.formats.length} formats`);
     expect(result.current.busy).toBe(false);
   });
@@ -122,8 +124,8 @@ describe("download", () => {
     await act(() => result.current.download());
 
     expect(mocks.downloadMedia).toHaveBeenCalledWith({
-      proxy: DEFAULT_PROXY, url: "https://youtu.be/jNQXAC9IVRw", info: INFO, format: FORMATS.mp4_360,
-      mp3: null, onProgress: expect.any(Function),
+      proxy: DEFAULT_PROXY, url: "https://youtu.be/jNQXAC9IVRw", info: INFO, format: FORMATS.mp4_1080,
+      audio: FORMATS.m4a, mp3: null, onProgress: expect.any(Function),
     });
     expect(result.current.progressOpen).toBe(true);
     expect(result.current.savedAs).toBe("Me at the zoo.mp4");
@@ -147,7 +149,8 @@ describe("download", () => {
   it("sends MP3 options for audio-only formats when enabled", async () => {
     const { result } = await withFormats();
     act(() => {
-      result.current.setFormatId("140");
+      result.current.setVideoId("");
+      result.current.setAudioId("140");
       result.current.setToMp3(true);
       result.current.setBitrate(192);
       result.current.setMetadata({ ...result.current.metadata, artist: "jawed" });

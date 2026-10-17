@@ -45,13 +45,46 @@ export function pickDefaultFormat(formats: MediaFormat[]): MediaFormat | undefin
   );
 }
 
-/** Best audio-only format compatible with the video container. */
-export function pickAudio(formats: MediaFormat[], video: MediaFormat): MediaFormat | undefined {
-  const audios = formats
+/** Video-only streams (no sound), best first: resolution, then frame rate, then bitrate. */
+export function videoFormats(formats: MediaFormat[]): MediaFormat[] {
+  return formats
+    .filter((f) => hasVideo(f) && !hasAudio(f))
+    .sort((a, b) => (b.height || 0) - (a.height || 0) || (b.fps || 0) - (a.fps || 0) || (b.tbr || 0) - (a.tbr || 0));
+}
+
+/** Audio-only streams, highest bitrate first. */
+export function audioFormats(formats: MediaFormat[]): MediaFormat[] {
+  return formats
     .filter((f) => hasAudio(f) && !hasVideo(f))
-    .sort((a, b) => (b.abr || 0) - (a.abr || 0));
-  const preferred = video.ext === "mp4" ? "m4a" : "webm";
-  return audios.find((f) => f.ext === preferred) ?? audios[0];
+    .sort((a, b) => (b.abr || b.tbr || 0) - (a.abr || a.tbr || 0));
+}
+
+/** Highest-resolution video stream, preferring mp4 among equals for wider playback support. */
+export function pickVideo(formats: MediaFormat[]): MediaFormat | undefined {
+  const videos = videoFormats(formats);
+  const top = videos[0]?.height;
+  return videos.find((f) => f.height === top && f.ext === "mp4") ?? videos[0];
+}
+
+/** Best audio stream, preferring one that fits the video's container so no .mkv fallback is needed. */
+export function pickAudio(formats: MediaFormat[], video?: MediaFormat): MediaFormat | undefined {
+  const audios = audioFormats(formats);
+  const preferred = video?.ext === "mp4" ? "m4a" : "webm";
+  return (video && audios.find((f) => f.ext === preferred)) || audios[0];
+}
+
+/** Container for a stream-copied merge: native when the pair fits, else mkv. */
+export function mergedExt(video: string, audio: string): "mp4" | "webm" | "mkv" {
+  if (video === "mp4" && audio === "m4a") return "mp4";
+  if (video === "webm" && audio === "webm") return "webm";
+  return "mkv";
+}
+
+/** Extension of the saved file for a given selection, mirroring what `downloadMedia` produces. */
+export function outputExt(video: MediaFormat | null, audio: MediaFormat | null, toMp3: boolean): string {
+  if (video && audio) return mergedExt(video.ext, audio.ext);
+  if (video) return video.ext;
+  return toMp3 ? "mp3" : (audio?.ext ?? "");
 }
 
 export const sanitizeFilename = (name: string): string => name.replace(/[\\/:*?"<>|]+/g, "_");
