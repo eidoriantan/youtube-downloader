@@ -23,7 +23,7 @@ It is recommended to use your own local machine/server as proxy using this repos
 - Set your own proxy URL; it is saved in your browser.
 
 ### Development
-Requires Node.js 20 or newer.
+Requires Node.js 22.12 or newer.
 
 ```sh
 npm install
@@ -36,6 +36,12 @@ Other scripts:
 - `npm run build` type-checks and builds to `dist/`
 - `npm run preview` serves the production build
 - `npm run lint` runs oxlint
+- `npm test` runs the test suite once; `npm run test:watch` re-runs it as you edit
+
+The tests need no network. The `app` project covers the TypeScript and React code in jsdom, with
+the Pyodide worker and ffmpeg.wasm replaced by fakes. The `python` project runs the real files in
+`src/py/` and the real worker on Pyodide from `node_modules`, with yt-dlp swapped for the stubs in
+`src/test/pystubs/`. Run one with `npx vitest run --project app` (or `python`).
 
 To test against a local proxy, run [cf-proxy] with `wrangler dev` and paste its URL into the **Proxy URL** field.
 

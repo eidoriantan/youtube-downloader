@@ -33,7 +33,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "echo \"Error: no test specified\""
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
@@ -45,13 +46,21 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.1.3",
     "oxlint": "^1.86.0",
+    "pyodide": "^314.0.7",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
-    "vite-plugin-sitemap": "^0.8.2"
+    "vite-plugin-sitemap": "^0.8.2",
+    "vitest": "^5.0.5"
   }
 }
