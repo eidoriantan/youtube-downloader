@@ -84,6 +84,11 @@ export interface DownloadOptions {
   url: string;
   info: MediaInfo;
   format: MediaFormat;
+  /**
+   * Audio to merge into a video-only `format`. Omit it to pick the best match
+   * automatically; `null` saves the video without sound. Ignored otherwise.
+   */
+  audio?: MediaFormat | null;
   /** Convert an audio-only download to a tagged MP3. */
   mp3?: Mp3Options | null;
   onProgress: ProgressHandler;

@@ -222,3 +222,38 @@ describe("downloadMedia", () => {
     expect(mocks.saveBlob).not.toHaveBeenCalled();
   });
 });
+
+describe("explicit audio choice", () => {
+  const stageIds = (events: DownloadProgress[]) => events[0].stages.map((s) => s.id);
+
+  it("merges the chosen audio instead of the best match", async () => {
+    const { opts, events } = options(FORMATS.mp4_1080, { audio: FORMATS.opus });
+    await downloadMedia(opts);
+    expect(mocks.runDownload).toHaveBeenCalledWith(CLEAN_URL, ["137", "251"], expect.any(Function));
+    expect(stageIds(events)).toEqual(["video", "audio", "merge", "save"]);
+    expect(mocks.mergeStreams.mock.calls[0][0].audio.format).toBe(FORMATS.opus);
+  });
+
+  it("saves a silent video when audio is null", async () => {
+    const { opts, events } = options(FORMATS.mp4_1080, { audio: null });
+    await expect(downloadMedia(opts)).resolves.toBe("Me at the zoo.mp4");
+    expect(mocks.runDownload).toHaveBeenCalledWith(CLEAN_URL, ["137"], expect.any(Function));
+    expect(stageIds(events)).toEqual(["video", "save"]);
+    expect(mocks.mergeStreams).not.toHaveBeenCalled();
+    expect(mocks.saveBlob).toHaveBeenCalledWith(new Uint8Array([137]), "mp4", true, "Me at the zoo.mp4");
+  });
+
+  it("ignores the audio choice for formats that already have audio", async () => {
+    await downloadStreams(options(FORMATS.mp4_360, { audio: FORMATS.m4a }).opts, vi.fn());
+    expect(mocks.runDownload).toHaveBeenLastCalledWith(CLEAN_URL, ["18"], expect.any(Function));
+    await downloadStreams(options(FORMATS.opus, { audio: FORMATS.m4a }).opts, vi.fn());
+    expect(mocks.runDownload).toHaveBeenLastCalledWith(CLEAN_URL, ["251"], expect.any(Function));
+  });
+
+  it("plans no audio or merge stages when a video-only format has no audio to add", async () => {
+    const info = { ...INFO, formats: [FORMATS.webm_720] };
+    const { opts, events } = options(FORMATS.webm_720, { info });
+    await downloadMedia(opts);
+    expect(stageIds(events)).toEqual(["video", "save"]);
+  });
+});

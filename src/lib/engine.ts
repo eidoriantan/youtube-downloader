@@ -56,17 +56,27 @@ function planStages(format: MediaFormat, mergeAudio: boolean, toMp3: boolean): D
   return stages;
 }
 
+/**
+ * The separate audio stream to merge in, if any. Only video-only formats get one:
+ * the caller's `audio` when given, none for `null`, else the best match.
+ */
+function audioFor({ info, format, audio }: DownloadOptions): MediaFormat | undefined {
+  if (!hasVideo(format) || hasAudio(format) || audio === null) return undefined;
+  return audio ?? pickAudio(info.formats, format);
+}
+
 /** Step 1: fetch raw stream(s) via yt-dlp. No merging happens here. */
 export async function downloadStreams(
-  { proxy, url, info, format }: DownloadOptions,
+  opts: DownloadOptions,
   report: (stage: DownloadStageId, fraction: number | null, detail: string) => void,
 ): Promise<DownloadedStreams> {
+  const { proxy, url, format } = opts;
   const first: DownloadStageId = hasVideo(format) ? "video" : "audio";
   syncProxy(proxy);
   await loadPython((msg) => report(first, null, msg));
 
   const formats = [format];
-  const audio = hasVideo(format) && !hasAudio(format) ? pickAudio(info.formats, format) : undefined;
+  const audio = audioFor(opts);
   if (audio) formats.push(audio);
 
   report(first, null, "Fetching stream details…");
@@ -93,7 +103,7 @@ export async function downloadMedia(opts: DownloadOptions): Promise<string> {
   const { info, format, mp3, onProgress } = opts;
   // MP3 conversion is only offered for audio-only formats.
   const toMp3 = !!mp3 && !hasVideo(format);
-  const stages = planStages(format, hasVideo(format) && !hasAudio(format), toMp3);
+  const stages = planStages(format, !!audioFor(opts), toMp3);
   const report = (stage: DownloadStageId, fraction: number | null, detail: string) =>
     onProgress({ stages, current: stages.findIndex((s) => s.id === stage), fraction, detail });
 
