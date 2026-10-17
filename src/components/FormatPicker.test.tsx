@@ -54,11 +54,27 @@ describe("FormatPicker", () => {
     expect(screen.getByRole("tab", { name: /Audio/ })).toHaveAttribute("aria-selected", "true");
   });
 
-  it("clears a selection with the none option and stays on the tab", async () => {
+  it("opens the Audio tab after choosing no video", async () => {
     const { onVideoChange } = setup();
     await userEvent.click(screen.getByRole("radio", { name: /No video/ }));
     expect(onVideoChange).toHaveBeenCalledWith("");
-    expect(screen.getByRole("tab", { name: /Video/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /Audio/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("clears the audio with the none option and stays on the Audio tab", async () => {
+    const { onAudioChange } = setup();
+    await userEvent.click(screen.getByRole("tab", { name: /Audio/ }));
+    await userEvent.click(screen.getByRole("radio", { name: /No audio/ }));
+    expect(onAudioChange).toHaveBeenCalledWith("");
+    expect(screen.getByRole("tab", { name: /Audio/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("anchors each hidden radio to its option so focusing it can't scroll the page away", () => {
+    setup();
+    for (const radio of screen.getAllByRole("radio")) {
+      expect(radio).toHaveClass("sr-only");
+      expect(radio.closest("label")).toHaveClass("relative");
+    }
   });
 
   it("switches tabs with the arrow keys", async () => {
