@@ -2,15 +2,19 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
-import { INFO } from "./test/fixtures";
+import { EMPTY_METADATA, INFO } from "./test/fixtures";
 import type { DownloadOptions } from "./types";
 
 const mocks = vi.hoisted(() => ({
-  listFormats: vi.fn(), downloadMedia: vi.fn(), syncProxy: vi.fn(), startLoading: vi.fn(),
+  listFormats: vi.fn(), downloadMedia: vi.fn(), downloadForReview: vi.fn(), saveMp3: vi.fn(),
+  syncProxy: vi.fn(), startLoading: vi.fn(),
 }));
 // useSyncExternalStore needs the same snapshot object on every call.
 const loadState = vi.hoisted(() => ({ steps: [], ready: true, error: null }));
-vi.mock("./lib/engine", () => ({ listFormats: mocks.listFormats, downloadMedia: mocks.downloadMedia }));
+vi.mock("./lib/engine", () => ({
+  listFormats: mocks.listFormats, downloadMedia: mocks.downloadMedia,
+  downloadForReview: mocks.downloadForReview, saveMp3: mocks.saveMp3,
+}));
 vi.mock("./lib/pyodide", () => ({ syncProxy: mocks.syncProxy }));
 vi.mock("./lib/loader", () => ({
   startLoading: mocks.startLoading,
@@ -28,6 +32,8 @@ beforeEach(() => {
     onProgress({ stages: [{ id: "video", label: "Download video" }, { id: "save", label: "Save file" }], current: 1, fraction: 1, detail: "" });
     return "Me at the zoo.mp4";
   });
+  mocks.saveMp3.mockResolvedValue("Me at the zoo.mp3");
+  history.replaceState(null, "");
 });
 
 async function getFormats() {
@@ -89,7 +95,7 @@ describe("App", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("offers MP3 conversion for audio-only formats and passes the options", async () => {
+  it("offers MP3 conversion for audio-only formats and passes the options when prefill is off", async () => {
     render(<App />);
     await getFormats();
     await userEvent.click(screen.getByRole("radio", { name: /No video/ }));
@@ -97,6 +103,7 @@ describe("App", () => {
     await userEvent.click(screen.getByRole("radio", { name: /130 kbps/ }));
     await userEvent.click(screen.getByRole("checkbox", { name: "Convert to MP3" }));
     await userEvent.selectOptions(screen.getByRole("combobox"), "128");
+    await userEvent.click(screen.getByRole("checkbox", { name: /Prefill metadata from MusicBrainz/ }));
     await userEvent.click(screen.getByText("MP3 metadata"));
     await userEvent.type(screen.getByLabelText("Artist"), "jawed");
     await userEvent.click(screen.getByRole("button", { name: "Download" }));
@@ -105,6 +112,53 @@ describe("App", () => {
       format: expect.objectContaining({ format_id: "140" }),
       mp3: { bitrate: 128, metadata: expect.objectContaining({ artist: "jawed" }) },
     }));
+  });
+
+  describe("MusicBrainz prefill", () => {
+    const MATCH = { ...EMPTY_METADATA, title: "Zoo Song", artist: "jawed", album: "Zoo" };
+
+    async function downloadMp3(matched = true) {
+      mocks.downloadForReview.mockResolvedValue({
+        data: new Uint8Array([3]), filename: "Me at the zoo.mp3",
+        metadata: matched ? MATCH : { ...EMPTY_METADATA, title: "Me at the zoo" }, matched,
+      });
+      render(<App />);
+      await getFormats();
+      await userEvent.click(screen.getByRole("radio", { name: /No video/ }));
+      await userEvent.click(screen.getByRole("checkbox", { name: "Convert to MP3" }));
+      expect(screen.getByRole("checkbox", { name: /Prefill metadata from MusicBrainz/ })).toBeChecked();
+      expect(screen.queryByText("MP3 metadata")).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Download" }));
+      return screen.findByText("Metadata");
+    }
+
+    it("shows the prefilled tags on a metadata card and saves them", async () => {
+      await downloadMp3();
+      expect(screen.queryByRole("button", { name: "Download" })).not.toBeInTheDocument();
+      expect(screen.getByText(/Filled in from MusicBrainz/)).toBeInTheDocument();
+      expect(screen.getByLabelText("Title")).toHaveValue("Zoo Song");
+      expect(screen.getByLabelText("Album")).toHaveValue("Zoo");
+
+      await userEvent.type(screen.getByLabelText("Year"), "2005");
+      await userEvent.click(screen.getByRole("button", { name: "Save MP3" }));
+      expect(mocks.saveMp3).toHaveBeenCalledWith(
+        expect.objectContaining({ filename: "Me at the zoo.mp3" }), { ...MATCH, year: "2005" },
+      );
+      expect(await screen.findByRole("button", { name: "Download" })).toBeInTheDocument();
+      expect(screen.getByText("Saved Me at the zoo.mp3")).toBeInTheDocument();
+    });
+
+    it("can save without tags", async () => {
+      await downloadMp3();
+      await userEvent.click(screen.getByRole("button", { name: "Save without tags" }));
+      expect(mocks.saveMp3).toHaveBeenCalledWith(expect.objectContaining({ filename: "Me at the zoo.mp3" }), null);
+    });
+
+    it("explains when MusicBrainz had no match", async () => {
+      await downloadMp3(false);
+      expect(screen.getByText(/No match on MusicBrainz/)).toBeInTheDocument();
+      expect(screen.getByLabelText("Title")).toHaveValue("Me at the zoo");
+    });
   });
 
   it("replaces the source card with the format card, keeping the proxy editable", async () => {

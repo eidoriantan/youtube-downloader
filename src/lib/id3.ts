@@ -1,6 +1,11 @@
 import MP3Tag from "mp3tag.js";
 import type { Mp3Metadata } from "../types";
 
+/** A form with every field blank. */
+export const EMPTY_METADATA: Mp3Metadata = {
+  title: "", artist: "", album: "", year: "", genre: "", track: "", cover: null,
+};
+
 /** ID3v2.3 text frame for each form field. */
 const TEXT_FRAMES = {
   title: "TIT2",

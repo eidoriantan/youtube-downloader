@@ -6,10 +6,11 @@ import { EMPTY_METADATA } from "../test/fixtures";
 import type { Mp3Bitrate, Mp3Metadata } from "../types";
 import { Mp3Options } from "./Mp3Options";
 
-const changes = { enabled: vi.fn(), bitrate: vi.fn(), metadata: vi.fn() };
+const changes = { enabled: vi.fn(), bitrate: vi.fn(), autoTag: vi.fn(), metadata: vi.fn() };
 
-function Harness({ initiallyEnabled = false }) {
+function Harness({ initiallyEnabled = false, initialAutoTag = false }) {
   const [enabled, setEnabled] = useState(initiallyEnabled);
+  const [autoTag, setAutoTag] = useState(initialAutoTag);
   const [bitrate, setBitrate] = useState<Mp3Bitrate>(320);
   const [metadata, setMetadata] = useState<Mp3Metadata>(EMPTY_METADATA);
   return (
@@ -18,6 +19,8 @@ function Harness({ initiallyEnabled = false }) {
       onEnabledChange={(v) => { changes.enabled(v); setEnabled(v); }}
       bitrate={bitrate}
       onBitrateChange={(v) => { changes.bitrate(v); setBitrate(v); }}
+      autoTag={autoTag}
+      onAutoTagChange={(v) => { changes.autoTag(v); setAutoTag(v); }}
       metadata={metadata}
       onMetadataChange={(v) => { changes.metadata(v); setMetadata(v); }}
     />
@@ -38,6 +41,26 @@ describe("Mp3Options", () => {
     expect(changes.enabled).toHaveBeenCalledWith(true);
     expect(screen.getByRole("combobox")).toHaveValue("320");
     expect(screen.getByLabelText("Title")).toBeInTheDocument();
+  });
+
+  it("hides the metadata form while MusicBrainz prefill is on", async () => {
+    render(<Harness initiallyEnabled initialAutoTag />);
+    const toggle = screen.getByRole("checkbox", { name: /Prefill metadata from MusicBrainz/ });
+    expect(toggle).toBeChecked();
+    expect(screen.queryByText("MP3 metadata")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Title")).not.toBeInTheDocument();
+
+    await userEvent.click(toggle);
+    expect(changes.autoTag).toHaveBeenCalledWith(false);
+    expect(screen.getByText("MP3 metadata")).toBeInTheDocument();
+    expect(screen.getByLabelText("Title")).toBeInTheDocument();
+  });
+
+  it("only offers the prefill toggle once MP3 is enabled", async () => {
+    render(<Harness initialAutoTag />);
+    expect(screen.queryByRole("checkbox", { name: /Prefill metadata/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("checkbox", { name: "Convert to MP3" }));
+    expect(screen.getByRole("checkbox", { name: /Prefill metadata/ })).toBeChecked();
   });
 
   it("offers 128-320 kbps and reports the choice as a number", async () => {

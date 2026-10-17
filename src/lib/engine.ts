@@ -1,7 +1,9 @@
 import { convertToMp3, mergeStreams } from "./ffmpeg";
 import { fmtBytes, hasAudio, hasVideo, pickAudio, sanitizeFilename } from "./format";
-import { writeMp3Tags } from "./id3";
+import { fingerprintAudio } from "./fingerprint";
+import { EMPTY_METADATA, writeMp3Tags } from "./id3";
 import { loadPython } from "./loader";
+import { identify } from "./musicbrainz";
 import { runDownload, runListFormats, syncProxy } from "./pyodide";
 import { saveBlob } from "./save";
 import type {
@@ -12,6 +14,10 @@ import type {
   DownloadOptions,
   MediaFormat,
   MediaInfo,
+  Mp3Bitrate,
+  Mp3Metadata,
+  ProgressHandler,
+  ReviewMp3,
   StatusHandler,
 } from "../types";
 
@@ -98,14 +104,20 @@ export async function downloadStreams(
   return { primary: grab(format), audio: audio ? grab(audio) : null };
 }
 
+function stageReporter(stages: DownloadStage[], onProgress: ProgressHandler) {
+  return (stage: DownloadStageId, fraction: number | null, detail: string) =>
+    onProgress({ stages, current: stages.findIndex((s) => s.id === stage), fraction, detail });
+}
+
+const filenameFor = (info: MediaInfo, ext: string) => `${sanitizeFilename(info.title || info.id)}.${ext}`;
+
 /** Downloads, merges if needed, saves to disk, and returns the filename. */
 export async function downloadMedia(opts: DownloadOptions): Promise<string> {
   const { info, format, mp3, onProgress } = opts;
   // MP3 conversion is only offered for audio-only formats.
   const toMp3 = !!mp3 && !hasVideo(format);
   const stages = planStages(format, !!audioFor(opts), toMp3);
-  const report = (stage: DownloadStageId, fraction: number | null, detail: string) =>
-    onProgress({ stages, current: stages.findIndex((s) => s.id === stage), fraction, detail });
+  const report = stageReporter(stages, onProgress);
 
   report(stages[0].id, null, "Starting…");
   const { primary, audio } = await downloadStreams(opts, report);
@@ -127,9 +139,70 @@ export async function downloadMedia(opts: DownloadOptions): Promise<string> {
     ext = "mp3";
   }
 
-  const filename = `${sanitizeFilename(info.title || info.id)}.${ext}`;
+  const filename = filenameFor(info, ext);
   report("save", null, "Handing the file to your browser…");
   saveBlob(data, ext, hasVideo(format), filename);
   report("save", 1, `Saved as ${filename}`);
   return filename;
+}
+
+/**
+ * Fingerprints the audio and looks it up on MusicBrainz. Falls back to the
+ * video's title and uploader when there is no key, no match, or the lookup fails.
+ */
+async function identifyAudio(data: Uint8Array, info: MediaInfo, onDetail: (detail: string) => void) {
+  const fallback: Mp3Metadata = { ...EMPTY_METADATA, title: info.title, artist: info.uploader ?? "" };
+  const key = import.meta.env.VITE_ACOUSTID_KEY;
+  if (!key) return { metadata: fallback, matched: false };
+  try {
+    onDetail("Fingerprinting the audio");
+    const { fingerprint, duration } = await fingerprintAudio(data);
+    onDetail("Looking it up on MusicBrainz");
+    const metadata = await identify(fingerprint, duration, key);
+    if (metadata) return { metadata, matched: true };
+  } catch (e) {
+    console.warn("MusicBrainz lookup failed", e);
+  }
+  return { metadata: fallback, matched: false };
+}
+
+/**
+ * Downloads an audio-only format, identifies it from its fingerprint and
+ * converts it to MP3, keeping the result in memory for the user to review.
+ */
+export async function downloadForReview(opts: {
+  proxy: string;
+  url: string;
+  info: MediaInfo;
+  format: MediaFormat;
+  bitrate: Mp3Bitrate;
+  onProgress: ProgressHandler;
+}): Promise<ReviewMp3> {
+  const { info, bitrate, onProgress } = opts;
+  const stages: DownloadStage[] = [
+    { id: "audio", label: "Download audio" },
+    { id: "identify", label: "Identify the track" },
+    { id: "mp3", label: "Convert to MP3" },
+  ];
+  const report = stageReporter(stages, onProgress);
+
+  report("audio", null, "Starting…");
+  const { primary } = await downloadStreams({ ...opts, audio: null }, report);
+
+  // Fingerprint the original stream, before it is re-encoded.
+  report("identify", null, "Fingerprinting the audio");
+  const { metadata, matched } = await identifyAudio(primary.data, info, (d) => report("identify", null, d));
+
+  const detail = `Re-encoding at ${bitrate} kbps`;
+  report("mp3", null, detail);
+  const data = await convertToMp3({ audio: primary, bitrate, onProgress: (f) => report("mp3", f, detail) });
+  report("mp3", 1, "Ready for review");
+  return { data, filename: filenameFor(info, "mp3"), metadata, matched };
+}
+
+/** Saves a reviewed MP3, tagged with `metadata` unless it is null. Returns the filename. */
+export async function saveMp3(mp3: Pick<ReviewMp3, "data" | "filename">, metadata: Mp3Metadata | null): Promise<string> {
+  const data = metadata ? await writeMp3Tags(mp3.data, metadata) : mp3.data;
+  saveBlob(data, "mp3", false, mp3.filename);
+  return mp3.filename;
 }

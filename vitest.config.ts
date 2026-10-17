@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     restoreMocks: true,
+    unstubEnvs: true,
     projects: [
       {
         extends: true,

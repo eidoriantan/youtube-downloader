@@ -79,6 +79,16 @@ export interface Mp3Options {
   metadata: Mp3Metadata;
 }
 
+/** A converted MP3 held in memory while the user reviews its prefilled tags. */
+export interface ReviewMp3 {
+  data: Uint8Array;
+  filename: string;
+  /** Prefilled from MusicBrainz, or from the video when nothing matched. */
+  metadata: Mp3Metadata;
+  /** Whether the metadata came from a MusicBrainz match. */
+  matched: boolean;
+}
+
 export interface DownloadOptions {
   proxy: string;
   url: string;
@@ -95,7 +105,7 @@ export interface DownloadOptions {
 }
 
 /** Stages a download can go through; only the ones that apply are shown. */
-export type DownloadStageId = "video" | "audio" | "merge" | "mp3" | "tags" | "save";
+export type DownloadStageId = "video" | "audio" | "identify" | "merge" | "mp3" | "tags" | "save";
 
 export interface DownloadStage {
   id: DownloadStageId;

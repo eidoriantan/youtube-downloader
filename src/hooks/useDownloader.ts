@@ -1,26 +1,39 @@
 import { useCallback, useEffect, useState } from "react";
-import { downloadMedia, listFormats } from "../lib/engine";
+import { downloadForReview, downloadMedia, listFormats, saveMp3 } from "../lib/engine";
 import { friendlyError } from "../lib/errors";
-import { pickAudio, pickVideo } from "../lib/format";
+import { hasVideo, pickAudio, pickVideo } from "../lib/format";
+import { EMPTY_METADATA } from "../lib/id3";
 import { syncProxy } from "../lib/pyodide";
-import type { DownloadProgress, MediaInfo, Mp3Bitrate, Mp3Metadata } from "../types";
+import type { DownloadProgress, MediaInfo, Mp3Bitrate, Mp3Metadata, ReviewMp3 } from "../types";
 
 // Shared default proxy. It is rate-limited; the UI tells users to deploy their own.
 const DEFAULT_PROXY = "https://cf-proxy.eidoriantan.com/";
 const PROXY_KEY = "proxy";
-
-const EMPTY_METADATA: Mp3Metadata = {
-  title: "", artist: "", album: "", year: "", genre: "", track: "", cover: null,
-};
+const AUTO_TAG_KEY = "autoTag";
 
 /** Which card is showing; one step at a time so the page never grows past the fold. */
-export type Step = "source" | "format";
+export type Step = "source" | "format" | "metadata";
+
+/** Steps pushed onto the browser history; "source" is the entry the page loaded on. */
+const pushedStep = (state: unknown): Step | null => {
+  const step = (state as { step?: unknown } | null)?.step;
+  return step === "format" || step === "metadata" ? step : null;
+};
 
 function loadProxy(): string {
   try {
     return localStorage.getItem(PROXY_KEY) || DEFAULT_PROXY;
   } catch {
     return DEFAULT_PROXY;
+  }
+}
+
+/** Prefilling from MusicBrainz is on unless the user turned it off. */
+function loadAutoTag(): boolean {
+  try {
+    return localStorage.getItem(AUTO_TAG_KEY) !== "false";
+  } catch {
+    return true;
   }
 }
 
@@ -38,6 +51,9 @@ export function useDownloader() {
   const [toMp3, setToMp3] = useState(false);
   const [bitrate, setBitrate] = useState<Mp3Bitrate>(320);
   const [metadata, setMetadata] = useState<Mp3Metadata>(EMPTY_METADATA);
+  const [autoTag, setAutoTag] = useState<boolean>(loadAutoTag);
+  // The converted MP3 waiting on the metadata step; dropped when the user leaves that step.
+  const [review, setReview] = useState<Omit<ReviewMp3, "metadata"> | null>(null);
   // The progress modal stays open after a download until the user closes it.
   const [progressOpen, setProgressOpen] = useState(false);
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
@@ -53,18 +69,37 @@ export function useDownloader() {
     }
   }, [proxy]);
 
-  // Browser Back/Forward move between steps; the format step is pushed as its own entry.
   useEffect(() => {
-    // A reload loses the fetched formats, so drop a leftover "format" entry state.
+    try {
+      localStorage.setItem(AUTO_TAG_KEY, String(autoTag));
+    } catch {
+      /* storage unavailable; the choice just won't persist */
+    }
+  }, [autoTag]);
+
+  // Browser Back/Forward move between steps; the format and metadata steps are pushed as their own entries.
+  useEffect(() => {
+    // A reload loses the fetched formats, so drop a leftover step entry state.
     if (history.state?.step) history.replaceState(null, "");
-    const onPop = (e: PopStateEvent) => setStep(e.state?.step === "format" ? "format" : "source");
+    const onPop = (e: PopStateEvent) => showStep(pushedStep(e.state) ?? "source");
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  /** Shows a step without touching history; leaving the metadata step discards the MP3 waiting there. */
+  function showStep(next: Step) {
+    setStep(next);
+    if (next !== "metadata") setReview(null);
+  }
+
+  const goTo = (next: Step) => {
+    setStep(next);
+    history.pushState({ step: next }, "");
+  };
+
   const backToSource = () => {
-    if (history.state?.step === "format") history.back();
-    else setStep("source");
+    if (pushedStep(history.state) === "format") history.back();
+    else showStep("source");
   };
 
   const run = useCallback(async (fn: () => Promise<void>) => {
@@ -91,8 +126,7 @@ export function useDownloader() {
       setVideoId(video?.format_id ?? "");
       setAudioId(pickAudio(data.formats, video)?.format_id ?? "");
       setStatus(`Found ${data.formats.length} formats`);
-      setStep("format");
-      history.pushState({ step: "format" }, "");
+      goTo("format");
     });
 
   const download = () =>
@@ -106,6 +140,20 @@ export function useDownloader() {
       setSavedAs("");
       setStatus("");
       setProgressOpen(true);
+
+      // Hold the MP3 in memory and let the user review the prefilled tags before saving.
+      if (mp3 && autoTag && !hasVideo(format)) {
+        const { metadata: found, ...pending } = await downloadForReview({
+          proxy, url, info, format, bitrate, onProgress: setProgress,
+        });
+        setMetadata(found);
+        setReview(pending);
+        setProgressOpen(false);
+        setStatus(pending.matched ? "Found it on MusicBrainz" : "No MusicBrainz match");
+        goTo("metadata");
+        return;
+      }
+
       // With a video picked, its audio choice is explicit: null means a silent video.
       const name = await downloadMedia({
         proxy, url, info, format, audio: video ? audio : undefined, mp3, onProgress: setProgress,
@@ -114,11 +162,22 @@ export function useDownloader() {
       setStatus(`Saved ${name}`);
     });
 
+  /** Saves the reviewed MP3, with the form's tags or without any, and returns to the format step. */
+  const saveReviewed = (withTags: boolean) =>
+    run(async () => {
+      if (!review) throw new Error("The converted MP3 is no longer available. Download it again.");
+      const name = await saveMp3(review, withTags ? metadata : null);
+      setStatus(`Saved ${name}`);
+      if (pushedStep(history.state) === "metadata") history.back();
+      else showStep("format");
+    });
+
   return {
     proxy, setProxy, url, setUrl, info, step, backToSource,
     videoId, setVideoId, audioId, setAudioId,
     status, error, busy, fetchFormats, download,
     toMp3, setToMp3, bitrate, setBitrate, metadata, setMetadata,
+    autoTag, setAutoTag, review, saveReviewed,
     progressOpen, progress, savedAs, closeProgress: () => setProgressOpen(false),
   };
 }

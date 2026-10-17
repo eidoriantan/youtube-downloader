@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Search } from "lucide-react";
+import { ArrowLeft, Download, Save, Search } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { Button } from "./components/Button";
@@ -7,6 +7,7 @@ import { ErrorAlert } from "./components/ErrorAlert";
 import { Field } from "./components/Field";
 import { FormatPicker } from "./components/FormatPicker";
 import { GithubLink } from "./components/GithubLink";
+import { MetadataForm } from "./components/MetadataForm";
 import { Mp3Options } from "./components/Mp3Options";
 import { Notice } from "./components/Notice";
 import { Panel } from "./components/Panel";
@@ -29,6 +30,7 @@ export default function App() {
   const audio = d.info?.formats.find((f) => f.format_id === d.audioId) ?? null;
   const toMp3 = d.toMp3 && !video;
   const onFormatStep = d.step === "format" && !!d.info;
+  const onMetadataStep = d.step === "metadata" && !!d.info && !!d.review;
 
   // Move focus to the card that just swapped in, so keyboard and screen reader users follow along.
   const stepRef = useRef<HTMLDivElement>(null);
@@ -36,7 +38,7 @@ export default function App() {
   useEffect(() => {
     if (firstStep.current) firstStep.current = false;
     else stepRef.current?.focus({ preventScroll: true });
-  }, [onFormatStep]);
+  }, [onFormatStep, onMetadataStep]);
 
   return (
     <div className="relative isolate flex min-h-screen flex-col overflow-x-clip bg-ink-950 font-sans text-ink-200 antialiased">
@@ -80,7 +82,37 @@ export default function App() {
           <EngineStatus steps={engine.steps} ready={engine.ready} error={engine.error} onRetry={engine.retry} />
 
           <div ref={stepRef} tabIndex={-1} className="outline-none">
-            {onFormatStep && d.info ? (
+            {onMetadataStep && d.info && d.review ? (
+              <Panel step="03" label="Metadata" className="space-y-5">
+                <div>
+                  <h2 className="font-display text-xl font-semibold leading-snug tracking-tight text-cream line-clamp-2" title={d.info.title}>
+                    {d.info.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-ink-400">
+                    Your MP3 is ready. Check the tags below, then save it.
+                  </p>
+                </div>
+                <Notice tone={d.review.matched ? "info" : "warn"}>
+                  {d.review.matched
+                    ? "Filled in from MusicBrainz using the audio fingerprint. Edit anything that looks off."
+                    : "No match on MusicBrainz, so the title and artist come from the video. Fill in the rest if you like."}
+                </Notice>
+                <MetadataForm metadata={d.metadata} onChange={d.setMetadata} />
+                <div className="flex flex-col-reverse gap-3 border-t border-ink-800 pt-5 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => d.saveReviewed(false)}
+                    disabled={d.busy}
+                    className="rounded-full border border-ink-700 px-5 py-2.5 text-sm font-medium text-ink-200 transition hover:border-ink-600 hover:text-cream focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Save without tags
+                  </button>
+                  <Button onClick={() => d.saveReviewed(true)} loading={d.busy} icon={<Save className="h-4 w-4" />}>
+                    Save MP3
+                  </Button>
+                </div>
+              </Panel>
+            ) : onFormatStep && d.info ? (
               <Panel step="02" label="Format" className="space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
                   <button
@@ -118,6 +150,8 @@ export default function App() {
                     onEnabledChange={d.setToMp3}
                     bitrate={d.bitrate}
                     onBitrateChange={d.setBitrate}
+                    autoTag={d.autoTag}
+                    onAutoTagChange={d.setAutoTag}
                     metadata={d.metadata}
                     onMetadataChange={d.setMetadata}
                   />

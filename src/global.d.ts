@@ -1,4 +1,9 @@
 /// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  /** AcoustID client key, used to look up audio fingerprints. */
+  readonly VITE_ACOUSTID_KEY?: string;
+}
 // vite/client already types `import x from "./file.py?raw"` as a string.
 
 /** Minimal surface of the Pyodide API used by this app. */

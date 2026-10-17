@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   convertToMp3: vi.fn(),
   writeMp3Tags: vi.fn(),
   saveBlob: vi.fn(),
+  fingerprintAudio: vi.fn(),
+  identify: vi.fn(),
 }));
 
 vi.mock("./pyodide", () => ({
@@ -18,10 +20,13 @@ vi.mock("./pyodide", () => ({
 }));
 vi.mock("./loader", () => ({ loadPython: mocks.loadPython }));
 vi.mock("./ffmpeg", () => ({ mergeStreams: mocks.mergeStreams, convertToMp3: mocks.convertToMp3 }));
-vi.mock("./id3", () => ({ writeMp3Tags: mocks.writeMp3Tags }));
+vi.mock("./id3", async () => ({ EMPTY_METADATA: (await import("../test/fixtures")).EMPTY_METADATA, writeMp3Tags: mocks.writeMp3Tags }));
+vi.mock("./fingerprint", () => ({ fingerprintAudio: mocks.fingerprintAudio }));
+vi.mock("./musicbrainz", () => ({ identify: mocks.identify }));
 vi.mock("./save", () => ({ saveBlob: mocks.saveBlob }));
 
-import { downloadMedia, downloadStreams, listFormats, singleVideoUrl } from "./engine";
+import { downloadForReview, downloadMedia, downloadStreams, listFormats, saveMp3, singleVideoUrl } from "./engine";
+import { EMPTY_METADATA } from "../test/fixtures";
 
 const URL_WITH_PLAYLIST = "https://www.youtube.com/watch?v=jNQXAC9IVRw&list=PL123&index=2#t=5";
 const CLEAN_URL = "https://www.youtube.com/watch?v=jNQXAC9IVRw";
@@ -54,6 +59,9 @@ beforeEach(() => {
   mocks.convertToMp3.mockResolvedValue(new Uint8Array([3]));
   mocks.writeMp3Tags.mockImplementation(async (d: Uint8Array) => new Uint8Array([...d, 0x1d]));
   serveDownload();
+  mocks.fingerprintAudio.mockResolvedValue({ fingerprint: "AQAB", duration: 19.2 });
+  mocks.identify.mockResolvedValue(null);
+  vi.stubEnv("VITE_ACOUSTID_KEY", "KEY");
 });
 
 describe("singleVideoUrl", () => {
@@ -255,5 +263,76 @@ describe("explicit audio choice", () => {
     const { opts, events } = options(FORMATS.webm_720, { info });
     await downloadMedia(opts);
     expect(stageIds(events)).toEqual(["video", "save"]);
+  });
+});
+
+describe("downloadForReview", () => {
+  const MATCH = { ...EMPTY_METADATA, title: "Zoo Song", artist: "jawed", album: "Zoo" };
+  const INFO_WITH_UPLOADER = { ...INFO, uploader: "jawed" };
+
+  function reviewOptions(format: MediaFormat = FORMATS.m4a) {
+    const events: DownloadProgress[] = [];
+    const opts = {
+      proxy: "p", url: CLEAN_URL, info: INFO_WITH_UPLOADER, format, bitrate: 192 as const,
+      onProgress: (p: DownloadProgress) => events.push(p),
+    };
+    return { opts, events };
+  }
+
+  it("fingerprints the original stream, converts to MP3 and returns it unsaved with the match", async () => {
+    mocks.identify.mockResolvedValue(MATCH);
+    const order: string[] = [];
+    mocks.fingerprintAudio.mockImplementation(async () => (order.push("fingerprint"), { fingerprint: "AQAB", duration: 19.2 }));
+    mocks.convertToMp3.mockImplementation(async () => (order.push("mp3"), new Uint8Array([3])));
+    const { opts, events } = reviewOptions();
+
+    await expect(downloadForReview(opts)).resolves.toEqual({
+      data: new Uint8Array([3]), filename: "Me at the zoo.mp3", metadata: MATCH, matched: true,
+    });
+    expect(events[0].stages.map((s) => s.id)).toEqual(["audio", "identify", "mp3"]);
+    expect(order).toEqual(["fingerprint", "mp3"]);
+    expect(mocks.fingerprintAudio).toHaveBeenCalledWith(new Uint8Array([140]));
+    expect(mocks.identify).toHaveBeenCalledWith("AQAB", 19.2, "KEY");
+    expect(mocks.convertToMp3).toHaveBeenCalledWith(expect.objectContaining({ bitrate: 192 }));
+    expect(events).toContainEqual(expect.objectContaining({ current: 1, detail: "Looking it up on MusicBrainz" }));
+    expect(mocks.writeMp3Tags).not.toHaveBeenCalled();
+    expect(mocks.saveBlob).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the video's title and uploader when nothing matches", async () => {
+    const result = await downloadForReview(reviewOptions().opts);
+    expect(result).toMatchObject({ matched: false, metadata: { ...EMPTY_METADATA, title: "Me at the zoo", artist: "jawed" } });
+  });
+
+  it("falls back when fingerprinting or the lookup fails, without failing the download", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    mocks.fingerprintAudio.mockRejectedValue(new Error("This browser cannot decode the \"opus\" codec."));
+    const result = await downloadForReview(reviewOptions(FORMATS.opus).opts);
+    expect(result).toMatchObject({ matched: false, metadata: { title: "Me at the zoo" } });
+    expect(mocks.convertToMp3).toHaveBeenCalled();
+  });
+
+  it("skips the lookup when no AcoustID key is configured", async () => {
+    vi.stubEnv("VITE_ACOUSTID_KEY", "");
+    const result = await downloadForReview(reviewOptions().opts);
+    expect(result.matched).toBe(false);
+    expect(mocks.fingerprintAudio).not.toHaveBeenCalled();
+  });
+});
+
+describe("saveMp3", () => {
+  const mp3 = { data: new Uint8Array([3]), filename: "Me at the zoo.mp3" };
+
+  it("tags and saves the MP3", async () => {
+    const metadata = { ...EMPTY_METADATA, title: "T" };
+    await expect(saveMp3(mp3, metadata)).resolves.toBe("Me at the zoo.mp3");
+    expect(mocks.writeMp3Tags).toHaveBeenCalledWith(new Uint8Array([3]), metadata);
+    expect(mocks.saveBlob).toHaveBeenCalledWith(new Uint8Array([3, 0x1d]), "mp3", false, "Me at the zoo.mp3");
+  });
+
+  it("saves it untagged when metadata is null", async () => {
+    await saveMp3(mp3, null);
+    expect(mocks.writeMp3Tags).not.toHaveBeenCalled();
+    expect(mocks.saveBlob).toHaveBeenCalledWith(new Uint8Array([3]), "mp3", false, "Me at the zoo.mp3");
   });
 });

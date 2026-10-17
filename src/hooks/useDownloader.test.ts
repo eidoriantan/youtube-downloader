@@ -1,10 +1,15 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { FORMATS, INFO } from "../test/fixtures";
+import { EMPTY_METADATA, FORMATS, INFO } from "../test/fixtures";
 import { useDownloader } from "./useDownloader";
 
-const mocks = vi.hoisted(() => ({ listFormats: vi.fn(), downloadMedia: vi.fn(), syncProxy: vi.fn() }));
-vi.mock("../lib/engine", () => ({ listFormats: mocks.listFormats, downloadMedia: mocks.downloadMedia }));
+const mocks = vi.hoisted(() => ({
+  listFormats: vi.fn(), downloadMedia: vi.fn(), downloadForReview: vi.fn(), saveMp3: vi.fn(), syncProxy: vi.fn(),
+}));
+vi.mock("../lib/engine", () => ({
+  listFormats: mocks.listFormats, downloadMedia: mocks.downloadMedia,
+  downloadForReview: mocks.downloadForReview, saveMp3: mocks.saveMp3,
+}));
 vi.mock("../lib/pyodide", () => ({ syncProxy: mocks.syncProxy }));
 
 const DEFAULT_PROXY = "https://cf-proxy.eidoriantan.com/";
@@ -14,6 +19,8 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   mocks.listFormats.mockResolvedValue(INFO);
   mocks.downloadMedia.mockResolvedValue("Me at the zoo.mp4");
+  mocks.saveMp3.mockResolvedValue("Me at the zoo.mp3");
+  history.replaceState(null, "");
 });
 
 describe("proxy", () => {
@@ -146,12 +153,13 @@ describe("download", () => {
     expect(result.current.progress).toBe(progress);
   });
 
-  it("sends MP3 options for audio-only formats when enabled", async () => {
+  it("sends MP3 options for audio-only formats when enabled and prefill is off", async () => {
     const { result } = await withFormats();
     act(() => {
       result.current.setVideoId("");
       result.current.setAudioId("140");
       result.current.setToMp3(true);
+      result.current.setAutoTag(false);
       result.current.setBitrate(192);
       result.current.setMetadata({ ...result.current.metadata, artist: "jawed" });
     });
@@ -183,5 +191,128 @@ describe("download", () => {
     expect(result.current.error).toBe("ffmpeg merge failed");
     expect(result.current.savedAs).toBe("");
     expect(result.current.busy).toBe(false);
+  });
+});
+
+describe("MusicBrainz prefill", () => {
+  const MP3 = new Uint8Array([3]);
+  const MATCH = { ...EMPTY_METADATA, title: "Zoo Song", artist: "jawed" };
+
+  beforeEach(() => {
+    mocks.downloadForReview.mockResolvedValue({ data: MP3, filename: "Me at the zoo.mp3", metadata: MATCH, matched: true });
+  });
+
+  /** Formats fetched, audio-only m4a picked and MP3 conversion on. */
+  async function audioToMp3() {
+    const hook = renderHook(() => useDownloader());
+    act(() => hook.result.current.setUrl("https://youtu.be/jNQXAC9IVRw"));
+    await act(() => hook.result.current.fetchFormats());
+    act(() => {
+      hook.result.current.setVideoId("");
+      hook.result.current.setAudioId("140");
+      hook.result.current.setToMp3(true);
+      hook.result.current.setBitrate(256);
+    });
+    return hook;
+  }
+
+  it("is on by default and remembers being turned off", () => {
+    const first = renderHook(() => useDownloader());
+    expect(first.result.current.autoTag).toBe(true);
+    act(() => first.result.current.setAutoTag(false));
+    expect(localStorage.getItem("autoTag")).toBe("false");
+    first.unmount();
+    expect(renderHook(() => useDownloader()).result.current.autoTag).toBe(false);
+  });
+
+  it("stays on when storage is unavailable", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
+    const { result } = renderHook(() => useDownloader());
+    expect(result.current.autoTag).toBe(true);
+    expect(() => act(() => result.current.setAutoTag(false))).not.toThrow();
+  });
+
+  it("downloads for review, prefills the form and moves to the metadata step", async () => {
+    const { result } = await audioToMp3();
+    await act(() => result.current.download());
+
+    expect(mocks.downloadForReview).toHaveBeenCalledWith({
+      proxy: DEFAULT_PROXY, url: "https://youtu.be/jNQXAC9IVRw", info: INFO, format: FORMATS.m4a,
+      bitrate: 256, onProgress: expect.any(Function),
+    });
+    expect(mocks.downloadMedia).not.toHaveBeenCalled();
+    expect(result.current.step).toBe("metadata");
+    expect(history.state).toEqual({ step: "metadata" });
+    expect(result.current.metadata).toEqual(MATCH);
+    expect(result.current.review).toEqual({ data: MP3, filename: "Me at the zoo.mp3", matched: true });
+    expect(result.current.progressOpen).toBe(false);
+    expect(result.current.status).toBe("Found it on MusicBrainz");
+  });
+
+  it("says when nothing matched", async () => {
+    mocks.downloadForReview.mockResolvedValue({ data: MP3, filename: "x.mp3", metadata: EMPTY_METADATA, matched: false });
+    const { result } = await audioToMp3();
+    await act(() => result.current.download());
+    expect(result.current.status).toBe("No MusicBrainz match");
+  });
+
+  it("saves the MP3 with the edited tags, then goes back to the format step", async () => {
+    const { result } = await audioToMp3();
+    await act(() => result.current.download());
+    act(() => result.current.setMetadata({ ...result.current.metadata, album: "Zoo" }));
+    await act(() => result.current.saveReviewed(true));
+
+    expect(mocks.saveMp3).toHaveBeenCalledWith(
+      { data: MP3, filename: "Me at the zoo.mp3", matched: true }, { ...MATCH, album: "Zoo" },
+    );
+    expect(result.current.status).toBe("Saved Me at the zoo.mp3");
+    await waitFor(() => expect(result.current.step).toBe("format"));
+    expect(result.current.review).toBeNull();
+  });
+
+  it("saves the MP3 without tags", async () => {
+    const { result } = await audioToMp3();
+    await act(() => result.current.download());
+    await act(() => result.current.saveReviewed(false));
+    expect(mocks.saveMp3).toHaveBeenCalledWith(expect.objectContaining({ data: MP3 }), null);
+  });
+
+  it("discards the MP3 when the user goes Back", async () => {
+    const { result } = await audioToMp3();
+    await act(() => result.current.download());
+    act(() => window.dispatchEvent(new PopStateEvent("popstate", { state: { step: "format" } })));
+    expect(result.current.step).toBe("format");
+    expect(result.current.review).toBeNull();
+  });
+
+  it("keeps the old flow when prefill is off", async () => {
+    const { result } = await audioToMp3();
+    act(() => result.current.setAutoTag(false));
+    await act(() => result.current.download());
+    expect(mocks.downloadForReview).not.toHaveBeenCalled();
+    expect(mocks.downloadMedia).toHaveBeenCalledWith(expect.objectContaining({ mp3: expect.objectContaining({ bitrate: 256 }) }));
+    expect(result.current.step).toBe("format");
+  });
+
+  it("keeps the old flow when MP3 conversion is off", async () => {
+    const { result } = await audioToMp3();
+    act(() => result.current.setToMp3(false));
+    await act(() => result.current.download());
+    expect(mocks.downloadForReview).not.toHaveBeenCalled();
+    expect(mocks.downloadMedia).toHaveBeenCalledWith(expect.objectContaining({ mp3: null }));
+  });
+
+  it("keeps the modal open with the error when the review download fails", async () => {
+    mocks.downloadForReview.mockRejectedValue(new Error("ffmpeg MP3 conversion failed"));
+    const { result } = await audioToMp3();
+    await act(() => result.current.download());
+    expect(result.current.progressOpen).toBe(true);
+    expect(result.current.error).toBe("ffmpeg MP3 conversion failed");
+    expect(result.current.step).toBe("format");
   });
 });

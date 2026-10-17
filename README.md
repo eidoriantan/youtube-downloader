@@ -18,6 +18,9 @@ It is recommended to use your own local machine/server as proxy using this repos
 ### Features
 - Pick from video and audio, video only, or audio only formats. Video-only streams get an audio track merged in automatically.
 - Convert audio to MP3 (128–320 kbps) with editable ID3 tags and cover art.
+- Optionally prefill those tags from MusicBrainz: the audio is fingerprinted in the browser with
+  [chromaprint-web], looked up on AcoustID, and the album's details and cover art fill a form you
+  review before saving.
 - Step-by-step download progress in a modal.
 - yt-dlp runs in a Web Worker, so the page stays responsive while it works.
 - Set your own proxy URL; it is saved in your browser.
@@ -28,8 +31,12 @@ Requires Node.js 22.12 or newer.
 ```sh
 npm install
 echo "VITE_SITE_URL=http://localhost:5173" > .env  # used for the sitemap and Open Graph image
+echo "VITE_ACOUSTID_KEY=your-key" >> .env           # AcoustID client key for MusicBrainz prefill
 npm run dev
 ```
+
+Register a free application key at [acoustid.org](https://acoustid.org/new-application). Without
+one, the MusicBrainz prefill falls back to the video's title and uploader.
 
 Other scripts:
 
@@ -57,3 +64,4 @@ do so.
 [pyodide]: https://pyodide.org/en/stable/
 [ffmpeg.wasm]: https://ffmpegwasm.netlify.app/
 [cf-proxy]: https://github.com/eidoriantan/cf-proxy
+[chromaprint-web]: https://github.com/eidoriantan/chromaprint-rust-wasm
